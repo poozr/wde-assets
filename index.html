@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.4
+Project Context: WDE Scoreboard SAP - V5.5
 </script>
 
 <!DOCTYPE html>
@@ -86,6 +86,10 @@ Project Context: WDE Scoreboard SAP - V5.4
     .fab-refresh:active { transform: scale(0.9); }
     .spinning { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
+    
+    /* Toggle Switch Styling Tweaks for Dark Mode */
+    .form-switch .form-check-input { cursor: pointer; border-color: rgba(255,255,255,0.25); }
+    .form-switch .form-check-input:checked { background-color: #E87722; border-color: #E87722; }
   </style>
 </head>
 <body>
@@ -100,7 +104,14 @@ Project Context: WDE Scoreboard SAP - V5.4
         </div>
       </div>
 
-      <div class="d-flex align-items-center gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <!-- Live First Toggle -->
+        <div class="form-check form-switch mb-0 d-flex align-items-center" title="Sort Final games to the bottom">
+          <input class="form-check-input mt-0" type="checkbox" role="switch" id="sortFinishedToggle">
+          <label class="form-check-label text-white ms-2" for="sortFinishedToggle" style="font-size: 0.7rem; white-space: nowrap; cursor: pointer;">Live First</label>
+        </div>
+        
+        <!-- Week Selector -->
         <select id="weekSelector" class="form-select form-select-sm bg-dark text-white border-secondary" style="font-size: 0.8rem; width: auto;">
           <option value="current" selected>Current</option>
           <option value="1">Week 1</option>
@@ -140,7 +151,7 @@ Project Context: WDE Scoreboard SAP - V5.4
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.4
+      WDE Scoreboard App &bull; V5.5
     </div>
   </main>
 
@@ -162,19 +173,23 @@ Project Context: WDE Scoreboard SAP - V5.4
         pollTimer: null,
         selectedWeek: 'current',
         auburnScoreUnlocked: sessionStorage.getItem('wde_score_unlocked') === 'true',
-        isFetching: false
+        liveFirst: localStorage.getItem('wde_live_first') === 'true',
+        isFetching: false,
+        cachedData: null
       };
 
       var dom = {
         auburnSection: document.getElementById('auburnSection'),
         secGamesList: document.getElementById('secGamesList'),
         weekSelector: document.getElementById('weekSelector'),
+        sortFinishedToggle: document.getElementById('sortFinishedToggle'),
         statusModeLabel: document.getElementById('statusModeLabel'),
         lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
         btnRefresh: document.getElementById('btnRefresh')
       };
 
       function init() {
+        dom.sortFinishedToggle.checked = state.liveFirst;
         setupEventListeners();
         fetchScoreboardData();
         startPolling();
@@ -185,6 +200,15 @@ Project Context: WDE Scoreboard SAP - V5.4
           state.selectedWeek = e.target.value;
           fetchScoreboardData();
         });
+        
+        dom.sortFinishedToggle.addEventListener('change', function(e) {
+          state.liveFirst = e.target.checked;
+          localStorage.setItem('wde_live_first', state.liveFirst);
+          if (state.cachedData) {
+            processAndRender(state.cachedData);
+          }
+        });
+
         dom.btnRefresh.addEventListener('click', function () {
           if (state.isFetching) return;
           var icon = dom.btnRefresh.querySelector('i');
@@ -208,6 +232,7 @@ Project Context: WDE Scoreboard SAP - V5.4
         fetch(url)
           .then(res => res.json())
           .then(data => {
+            state.cachedData = data;
             processAndRender(data);
             state.isFetching = false;
             if (callback) callback();
@@ -240,7 +265,21 @@ Project Context: WDE Scoreboard SAP - V5.4
 
         var today = new Date().getDay();
         otherGames.sort(function (a, b) {
-          if (today === 0) {
+          // 1. Toggle override: Push finals to the bottom, live games to the top
+          if (state.liveFirst) {
+            var aIsFinal = a.state === 'post';
+            var bIsFinal = b.state === 'post';
+            if (aIsFinal && !bIsFinal) return 1;
+            if (!aIsFinal && bIsFinal) return -1;
+            
+            var aIsLive = a.state === 'in';
+            var bIsLive = b.state === 'in';
+            if (aIsLive && !bIsLive) return -1;
+            if (!aIsLive && bIsLive) return 1;
+          }
+          
+          // 2. Standard sorting: Sunday ranking sort vs standard chronological
+          if (today === 0 && !state.liveFirst) {
             var aRanked = a.homeTeam.rank || a.awayTeam.rank ? 1 : 0;
             var bRanked = b.homeTeam.rank || b.awayTeam.rank ? 1 : 0;
             return bRanked - aRanked;
@@ -316,7 +355,11 @@ Project Context: WDE Scoreboard SAP - V5.4
               if (res.isConfirmed) {
                 state.auburnScoreUnlocked = true;
                 sessionStorage.setItem('wde_score_unlocked', 'true');
-                fetchScoreboardData();
+                if (state.cachedData) {
+                   processAndRender(state.cachedData);
+                } else {
+                   fetchScoreboardData();
+                }
               }
             });
           });
