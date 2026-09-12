@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.0
+Project Context: WDE Scoreboard SAP - V5.1
 </script>
 
 <!DOCTYPE html>
@@ -66,6 +66,7 @@ Project Context: WDE Scoreboard SAP - V5.0
     .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
     .game-card-auburn { border: 2px solid #E87722; box-shadow: 0 4px 15px rgba(232, 119, 34, 0.2); }
     .game-card-double-ranked { border: 1px solid #D4AF37; }
+    .game-card-single-ranked { border-left: 4px solid #E87722; }
     .auburn-badge-strip { background-color: #E87722; color: #0C2340; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
     .team-logo { width: 36px; height: 36px; object-fit: contain; }
     .rank-badge { color: #D4AF37; font-size: 0.75rem; margin-right: 6px; font-weight: bold; }
@@ -319,8 +320,17 @@ Project Context: WDE Scoreboard SAP - V5.0
 
       function renderOtherGames(games) {
         dom.secGamesList.innerHTML = games.length ? games.map(function(game) {
-          var highlight = (game.homeTeam.rank && game.awayTeam.rank) ? 'game-card-double-ranked' : '';
-          return '<div class="game-card p-3 ' + highlight + '">' + buildGameHeaderHtml(game, highlight) + buildScoreRowHtml(game) + '</div>';
+          var bothRanked = game.homeTeam.rank && game.awayTeam.rank;
+          var singleRanked = (game.homeTeam.rank || game.awayTeam.rank) && !bothRanked;
+          
+          var highlightClass = '';
+          if (bothRanked) {
+            highlightClass = 'game-card-double-ranked';
+          } else if (singleRanked) {
+            highlightClass = 'game-card-single-ranked';
+          }
+          
+          return '<div class="game-card p-3 ' + highlightClass + '">' + buildGameHeaderHtml(game, bothRanked) + buildScoreRowHtml(game) + '</div>';
         }).join('') : '<div class="text-center py-4 text-muted">No conference games.</div>';
       }
 
