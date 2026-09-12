@@ -1,0 +1,351 @@
+<script type="text/plain">
+Filename: index.html
+Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
+Project Context: WDE Scoreboard SAP - V5.0
+</script>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0C2340">
+
+  <title>WDE Scoreboard</title>
+
+  <!-- Desktop Browser Favicons -->
+  <link rel="shortcut icon" type="image/x-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
+  <link rel="icon" type="image/x-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
+  <!-- Mobile Launcher Icon -->
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1kV2OgIi3eYlOCiKDRDKAQml1XB_RwUfS">
+
+  <!-- Google Fonts: Graduate -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Graduate&display=swap" rel="stylesheet">
+
+  <!-- Inline Web App Manifest & Service Worker -->
+  <script>
+    (function () {
+      var iconUrl = "https://lh3.googleusercontent.com/d/1kV2OgIi3eYlOCiKDRDKAQml1XB_RwUfS";
+      var manifest = {
+        name: "WDE Scoreboard",
+        short_name: "WDE",
+        start_url: window.location.href,
+        display: "standalone",
+        background_color: "#071526",
+        theme_color: "#0C2340",
+        icons: [
+          { src: iconUrl, sizes: "192x192", type: "image/jpeg" },
+          { src: iconUrl, sizes: "512x512", type: "image/jpeg" }
+        ]
+      };
+      var manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
+      document.head.appendChild(Object.assign(document.createElement('link'), {
+        rel: 'manifest', href: URL.createObjectURL(manifestBlob)
+      }));
+
+      if ('serviceWorker' in navigator) {
+        var swBlob = new Blob(["self.addEventListener('fetch', function(e) {});"], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
+      }
+    })();
+  </script>
+
+  <!-- Bootstrap 5 CSS & Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+
+  <style>
+    body { background-color: #071526; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    .navbar-auburn { background-color: #0C2340; border-bottom: 2px solid #E87722; }
+    .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
+    .game-card-auburn { border: 2px solid #E87722; box-shadow: 0 4px 15px rgba(232, 119, 34, 0.2); }
+    .game-card-double-ranked { border: 1px solid #D4AF37; }
+    .auburn-badge-strip { background-color: #E87722; color: #0C2340; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
+    .team-logo { width: 36px; height: 36px; object-fit: contain; }
+    .rank-badge { color: #D4AF37; font-size: 0.75rem; margin-right: 6px; font-weight: bold; }
+    .team-name { font-weight: 600; font-size: 1rem; }
+    .team-record { font-size: 0.7rem; color: #adb5bd; }
+    .team-score { font-size: 1.5rem; font-weight: bold; }
+    .status-badge { font-size: 0.7rem; font-weight: bold; padding: 3px 8px; border-radius: 4px; }
+    .status-live { background-color: #dc3545; color: white; }
+    .status-final { background-color: #495057; color: white; }
+    .status-scheduled { background-color: transparent; border: 1px solid #6c757d; color: #ced4da; }
+    .spoiler-container { position: relative; }
+    .spoiler-blur { filter: blur(12px); pointer-events: none; user-select: none; opacity: 0.6; }
+    .spoiler-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; padding: 20px; text-align: center; }
+    .btn-reveal { background-color: #E87722; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-reveal:hover { background-color: #d6681c; }
+    .fab-refresh { position: fixed; bottom: 24px; right: 24px; background-color: #E87722; color: white; border: none; border-radius: 50%; width: 56px; height: 56px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: transform 0.2s; }
+    .fab-refresh:active { transform: scale(0.9); }
+    .spinning { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <header class="navbar navbar-auburn sticky-top px-3 py-2">
+    <div class="container-fluid d-flex justify-content-between align-items-center p-0">
+      <div class="d-flex align-items-center gap-3">
+        <img src="https://poozr.github.io/wde-assets/LogoFavicon.ico" alt="WDE Logo" style="height: 54px; width: 54px;">
+        <div class="d-flex flex-column justify-content-center">
+          <h1 class="mb-0 text-white text-uppercase" style="font-family: 'Graduate', sans-serif; font-size: 2.5rem; line-height: 0.85; letter-spacing: 1px; margin-top: 6px;">WDE SCOREBOARD</h1>
+          <small id="statusModeLabel" class="mt-1" style="color: rgba(255,255,255,0.75); font-size: 0.75rem; font-family: sans-serif; line-height: 1;">Loading SEC Slate...</small>
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center gap-2">
+        <select id="weekSelector" class="form-select form-select-sm bg-dark text-white border-secondary" style="font-size: 0.8rem; width: auto;">
+          <option value="current" selected>Current</option>
+          <option value="1">Week 1</option>
+          <option value="2">Week 2</option>
+          <option value="3">Week 3</option>
+          <option value="4">Week 4</option>
+          <option value="5">Week 5</option>
+          <option value="6">Week 6</option>
+          <option value="7">Week 7</option>
+          <option value="8">Week 8</option>
+          <option value="9">Week 9</option>
+          <option value="10">Week 10</option>
+          <option value="11">Week 11</option>
+          <option value="12">Week 12</option>
+          <option value="13">Week 13</option>
+          <option value="14">Week 14</option>
+          <option value="15">Champ</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <main class="container py-3" style="max-width: 600px;">
+    <section id="auburnSection" class="mb-3"></section>
+    
+    <div class="d-flex justify-content-between align-items-center px-1 mb-2">
+      <span class="text-uppercase fw-bold text-muted" style="font-size: 0.75rem; letter-spacing: 0.08em;">SEC Slate</span>
+      <span class="text-muted" style="font-size: 0.7rem;" id="lastUpdatedLabel"></span>
+    </div>
+
+    <section id="secGamesList" class="d-flex flex-column gap-2">
+      <div class="text-center py-5 text-muted">
+        <div class="spinner-border spinner-border-sm text-warning mb-2"></div>
+        <div>Loading SEC matchups...</div>
+      </div>
+    </section>
+  </main>
+
+  <button id="btnRefresh" class="fab-refresh" aria-label="Refresh Scores">
+    <i class="bi bi-arrow-clockwise fs-4"></i>
+  </button>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    (function () {
+      'use strict';
+      var state = {
+        auburnId: '2',
+        secGroupId: '8',
+        baseUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard',
+        pollingInterval: 45000,
+        pollTimer: null,
+        selectedWeek: 'current',
+        auburnScoreUnlocked: sessionStorage.getItem('wde_score_unlocked') === 'true',
+        isFetching: false
+      };
+
+      var dom = {
+        auburnSection: document.getElementById('auburnSection'),
+        secGamesList: document.getElementById('secGamesList'),
+        weekSelector: document.getElementById('weekSelector'),
+        statusModeLabel: document.getElementById('statusModeLabel'),
+        lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
+        btnRefresh: document.getElementById('btnRefresh')
+      };
+
+      function init() {
+        setupEventListeners();
+        fetchScoreboardData();
+        startPolling();
+      }
+
+      function setupEventListeners() {
+        dom.weekSelector.addEventListener('change', function (e) {
+          state.selectedWeek = e.target.value;
+          fetchScoreboardData();
+        });
+        dom.btnRefresh.addEventListener('click', function () {
+          if (state.isFetching) return;
+          var icon = dom.btnRefresh.querySelector('i');
+          icon.classList.add('spinning');
+          fetchScoreboardData(function () { icon.classList.remove('spinning'); });
+        });
+      }
+
+      function startPolling() {
+        if (state.pollTimer) clearInterval(state.pollTimer);
+        state.pollTimer = setInterval(function () {
+          if (state.selectedWeek === 'current') fetchScoreboardData();
+        }, state.pollingInterval);
+      }
+
+      function fetchScoreboardData(callback) {
+        state.isFetching = true;
+        var url = state.baseUrl + '?groups=' + state.secGroupId;
+        if (state.selectedWeek !== 'current') url += '&week=' + state.selectedWeek;
+
+        fetch(url)
+          .then(res => res.json())
+          .then(data => {
+            processAndRender(data);
+            state.isFetching = false;
+            if (callback) callback();
+          })
+          .catch(err => {
+            console.error(err);
+            state.isFetching = false;
+            if (callback) callback();
+            Swal.fire({ icon: 'error', title: 'Connection Error', text: 'Unable to fetch scores.', confirmButtonColor: '#E87722' });
+          });
+      }
+
+      function processAndRender(data) {
+        updateHeaderMetadata();
+        var events = data.events || [];
+        if (!events.length) {
+          dom.auburnSection.innerHTML = '';
+          dom.secGamesList.innerHTML = '<div class="text-center py-5 text-muted">No games scheduled.</div>';
+          return;
+        }
+
+        var normalizedGames = events.map(normalizeGameData);
+        var auburnGame = null;
+        var otherGames = [];
+
+        normalizedGames.forEach(function (game) {
+          if (game.homeTeam.id === state.auburnId || game.awayTeam.id === state.auburnId) auburnGame = game;
+          else otherGames.push(game);
+        });
+
+        var today = new Date().getDay();
+        otherGames.sort(function (a, b) {
+          if (today === 0) {
+            var aRanked = a.homeTeam.rank || a.awayTeam.rank ? 1 : 0;
+            var bRanked = b.homeTeam.rank || b.awayTeam.rank ? 1 : 0;
+            return bRanked - aRanked;
+          }
+          return new Date(a.date) - new Date(b.date);
+        });
+
+        renderAuburnGame(auburnGame);
+        renderOtherGames(otherGames);
+      }
+
+      function normalizeGameData(event) {
+        var comp = (event.competitions && event.competitions[0]) || {};
+        var home = (comp.competitors || []).find(c => c.homeAway === 'home') || {};
+        var away = (comp.competitors || []).find(c => c.homeAway === 'away') || {};
+        var tv = (comp.broadcasts && comp.broadcasts[0] && comp.broadcasts[0].names) ? comp.broadcasts[0].names[0] : '';
+        
+        return {
+          id: event.id,
+          date: event.date,
+          state: (event.status && event.status.type) ? event.status.type.state : 'pre',
+          statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
+          tvStation: tv,
+          homeTeam: extractTeamDetails(home),
+          awayTeam: extractTeamDetails(away)
+        };
+      }
+
+      function extractTeamDetails(competitor) {
+        var team = competitor.team || {};
+        var rank = (competitor.curatedRank && competitor.curatedRank.current <= 25) ? competitor.curatedRank.current : null;
+        return {
+          id: team.id,
+          name: team.shortDisplayName || team.displayName || 'TBD',
+          logo: team.logo || '',
+          score: competitor.score || '0',
+          rank: rank,
+          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : ''
+        };
+      }
+
+      function updateHeaderMetadata() {
+        var now = new Date();
+        dom.lastUpdatedLabel.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        var today = now.getDay();
+        dom.statusModeLabel.textContent = today === 0 ? 'Sunday SEC Recap' : (today === 6 ? 'Saturday Game Day Live' : 'Upcoming Weekend Slate');
+      }
+
+      function renderAuburnGame(game) {
+        if (!game) {
+          dom.auburnSection.innerHTML = '<div class="game-card p-3 text-center"><div class="fw-bold text-white fs-5">Open Week / Bye</div></div>';
+          return;
+        }
+
+        var isLive = game.state === 'in';
+        var needsShield = isLive && !state.auburnScoreUnlocked;
+
+        dom.auburnSection.innerHTML = 
+          '<div class="game-card game-card-auburn">' +
+            '<div class="auburn-badge-strip">Auburn Matchup</div>' +
+            '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
+              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-warning"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealAuburn" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Live Score</button></div>' : '') +
+              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game) + buildScoreRowHtml(game) + '</div>' +
+            '</div>' +
+          '</div>';
+
+        if (needsShield) {
+          document.getElementById('btnRevealAuburn').addEventListener('click', function() {
+            Swal.fire({
+              title: 'Caught up?', text: 'Reveal live Auburn score for this session?', icon: 'warning',
+              showCancelButton: true, confirmButtonColor: '#E87722', confirmButtonText: 'Yes, reveal score'
+            }).then(res => {
+              if (res.isConfirmed) {
+                state.auburnScoreUnlocked = true;
+                sessionStorage.setItem('wde_score_unlocked', 'true');
+                fetchScoreboardData();
+              }
+            });
+          });
+        }
+      }
+
+      function renderOtherGames(games) {
+        dom.secGamesList.innerHTML = games.length ? games.map(function(game) {
+          var highlight = (game.homeTeam.rank && game.awayTeam.rank) ? 'game-card-double-ranked' : '';
+          return '<div class="game-card p-3 ' + highlight + '">' + buildGameHeaderHtml(game, highlight) + buildScoreRowHtml(game) + '</div>';
+        }).join('') : '<div class="text-center py-4 text-muted">No conference games.</div>';
+      }
+
+      function buildGameHeaderHtml(game, doubleRanked) {
+        var timeLabel = game.state === 'pre' ? formatKickoffTime(game.date) : (game.statusDetail || 'LIVE');
+        var badgeClass = game.state === 'in' ? 'status-live' : (game.state === 'post' ? 'status-final' : 'status-scheduled');
+        return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge bg-secondary" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + (doubleRanked ? '<span class="badge bg-warning text-dark fw-bold" style="font-size: 0.65rem;">TOP 25 CLASH</span>' : '') + '</div>';
+      }
+
+      function buildScoreRowHtml(game) {
+        return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, game.state === 'pre') + buildTeamRowHtml(game.homeTeam, game.state === 'pre') + '</div>';
+      }
+
+      function buildTeamRowHtml(team, isScheduled) {
+        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name text-white">' + (team.rank ? '<span class="rank-badge">#' + team.rank + '</span>' : '') + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
+      }
+
+      function formatKickoffTime(dateString) {
+        if (!dateString) return 'TBD';
+        var d = new Date(dateString);
+        return d.toLocaleDateString([], { weekday: 'short' }) + ' ' + d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    })();
+  </script>
+</body>
+</html>
