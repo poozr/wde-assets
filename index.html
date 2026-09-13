@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.7
+Project Context: WDE Scoreboard SAP - V5.9
 </script>
 
 <!DOCTYPE html>
@@ -19,8 +19,9 @@ Project Context: WDE Scoreboard SAP - V5.7
   <!-- Desktop Browser Favicons -->
   <link rel="shortcut icon" type="image/x-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
   <link rel="icon" type="image/x-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
+  
   <!-- Mobile Launcher Icon -->
-  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1kV2OgIi3eYlOCiKDRDKAQml1XB_RwUfS">
+  <link rel="apple-touch-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
 
   <!-- Google Fonts: Graduate -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -30,7 +31,8 @@ Project Context: WDE Scoreboard SAP - V5.7
   <!-- Inline Web App Manifest & Service Worker -->
   <script>
     (function () {
-      var iconUrl = "https://lh3.googleusercontent.com/d/1kV2OgIi3eYlOCiKDRDKAQml1XB_RwUfS";
+      // Pointing directly to your ICO file for the Android Manifest
+      var iconUrl = "https://poozr.github.io/wde-assets/LogoFavicon.ico";
       var manifest = {
         name: "WDE Scoreboard",
         short_name: "WDE",
@@ -39,8 +41,8 @@ Project Context: WDE Scoreboard SAP - V5.7
         background_color: "#071526",
         theme_color: "#0C2340",
         icons: [
-          { src: iconUrl, sizes: "192x192", type: "image/jpeg" },
-          { src: iconUrl, sizes: "512x512", type: "image/jpeg" }
+          { src: iconUrl, sizes: "192x192", type: "image/x-icon", purpose: "any maskable" },
+          { src: iconUrl, sizes: "512x512", type: "image/x-icon", purpose: "any maskable" }
         ]
       };
       var manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -184,7 +186,7 @@ Project Context: WDE Scoreboard SAP - V5.7
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.7
+      WDE Scoreboard App &bull; V5.9
     </div>
   </main>
 
