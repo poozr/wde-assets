@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.10
+Project Context: WDE Scoreboard SAP - V5.11
 </script>
 
 <!DOCTYPE html>
@@ -31,7 +31,6 @@ Project Context: WDE Scoreboard SAP - V5.10
   <!-- Inline Web App Manifest & Service Worker -->
   <script>
     (function () {
-      // Pointing directly to your PNG file for the Android Manifest
       var iconUrl = "https://poozr.github.io/wde-assets/LogoAppIcon.png";
       var manifest = {
         name: "WDE Scoreboard",
@@ -186,7 +185,7 @@ Project Context: WDE Scoreboard SAP - V5.10
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.10
+      WDE Scoreboard App &bull; V5.11
     </div>
   </main>
 
@@ -373,8 +372,19 @@ Project Context: WDE Scoreboard SAP - V5.10
           return;
         }
 
+        // --- NEW SPOILER LOGIC (V5.11) ---
+        var now = new Date();
+        var day = now.getDay();
+        var hours = now.getHours();
+        
+        // Window applies Thursday through Saturday, and Sunday before 3 AM
+        var isSpoilerWindow = (day >= 4 && day <= 6) || (day === 0 && hours < 3);
+        
         var isLive = game.state === 'in';
-        var needsShield = isLive && !state.auburnScoreUnlocked;
+        var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
+        
+        var needsShield = (isLive || isRecentFinal) && !state.auburnScoreUnlocked;
+        // ---------------------------------
 
         dom.auburnSection.innerHTML = 
           '<div class="game-card game-card-auburn">' +
@@ -388,7 +398,7 @@ Project Context: WDE Scoreboard SAP - V5.10
         if (needsShield) {
           document.getElementById('btnRevealAuburn').addEventListener('click', function() {
             Swal.fire({
-              title: 'Caught up?', text: 'Reveal live Auburn score for this session?', icon: 'warning',
+              title: 'Caught up?', text: 'Reveal Auburn score for this session?', icon: 'warning',
               showCancelButton: true, confirmButtonColor: '#E87722', confirmButtonText: 'Yes, reveal score'
             }).then(res => {
               if (res.isConfirmed) {
