@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.12
+Project Context: WDE Scoreboard SAP - V5.13
 </script>
 
 <!DOCTYPE html>
@@ -147,12 +147,12 @@ Project Context: WDE Scoreboard SAP - V5.12
       <div>
         <label class="form-label fw-bold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
         <select id="spoilerExpirationSelector" class="form-select bg-dark text-white border-secondary">
-          <option value="0">Sunday 12:00 AM (Midnight)</option>
-          <option value="3">Sunday 3:00 AM</option>
-          <option value="9">Sunday 9:00 AM</option>
-          <option value="12">Sunday 12:00 PM (Noon)</option>
-          <option value="18">Sunday 6:00 PM</option>
-          <option value="24">Monday 12:00 AM (All Sunday)</option>
+          <option value="0">Midnight (End of Game Day)</option>
+          <option value="3">3:00 AM (Next Day)</option>
+          <option value="9">9:00 AM (Next Day)</option>
+          <option value="12">12:00 PM Noon (Next Day)</option>
+          <option value="18">6:00 PM (Next Day)</option>
+          <option value="24">Midnight (Full Next Day Protected)</option>
         </select>
         <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">When should the app stop automatically hiding Auburn's final score?</small>
       </div>
@@ -199,7 +199,7 @@ Project Context: WDE Scoreboard SAP - V5.12
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.12
+      WDE Scoreboard App &bull; V5.13
     </div>
   </main>
 
@@ -241,7 +241,6 @@ Project Context: WDE Scoreboard SAP - V5.12
 
       function init() {
         dom.sortFinishedToggle.checked = state.liveFirst;
-        // Set the dropdown to match the saved state
         dom.spoilerExpirationSelector.value = state.spoilerExpirationHour;
         
         setupEventListeners();
@@ -269,7 +268,7 @@ Project Context: WDE Scoreboard SAP - V5.12
           }
         });
 
-        // Event listener for the new Expiration dropdown
+        // Save new expiration preference when changed
         dom.spoilerExpirationSelector.addEventListener('change', function(e) {
           state.spoilerExpirationHour = parseInt(e.target.value);
           localStorage.setItem('wde_spoiler_hour', state.spoilerExpirationHour);
@@ -366,7 +365,7 @@ Project Context: WDE Scoreboard SAP - V5.12
         
         return {
           id: event.id,
-          date: event.date,
+          date: event.date, // ISO timestamp of kickoff (e.g. "2026-09-12T19:30Z")
           state: (event.status && event.status.type) ? event.status.type.state : 'pre',
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
@@ -402,22 +401,31 @@ Project Context: WDE Scoreboard SAP - V5.12
         }
 
         var now = new Date();
-        var day = now.getDay();
-        var hours = now.getHours();
         
-        // Shield applies Thursday through Saturday, and Sunday before the selected expiration hour
-        var isSpoilerWindow = (day >= 4 && day <= 6) || (day === 0 && hours < state.spoilerExpirationHour);
+        // --- DYNAMIC SPOILER LOGIC (V5.13) ---
+        // Establish exactly what day the game kicked off
+        var gameDate = new Date(game.date);
+        
+        // Build the expiration threshold based on the kickoff date
+        var expirationDate = new Date(gameDate);
+        expirationDate.setHours(0, 0, 0, 0); // Roll back to Midnight of the game day
+        expirationDate.setDate(expirationDate.getDate() + 1); // Push forward 1 full day (Midnight the next day)
+        expirationDate.setHours(state.spoilerExpirationHour); // Add the user's selected hour
+        
+        // The shield should remain active if the current time is before the calculated expiration
+        var isSpoilerWindow = now < expirationDate;
         
         var isLive = game.state === 'in';
         var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
         
         var needsShield = (isLive || isRecentFinal) && !state.auburnScoreUnlocked;
+        // ------------------------------------
 
         dom.auburnSection.innerHTML = 
           '<div class="game-card game-card-auburn">' +
             '<div class="auburn-badge-strip">Auburn Matchup</div>' +
             '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
-              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-warning"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealAuburn" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Live Score</button></div>' : '') +
+              (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-warning"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealAuburn" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
               '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game) + buildScoreRowHtml(game) + '</div>' +
             '</div>' +
           '</div>';
