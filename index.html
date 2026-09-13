@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.11
+Project Context: WDE Scoreboard SAP - V5.12
 </script>
 
 <!DOCTYPE html>
@@ -143,6 +143,20 @@ Project Context: WDE Scoreboard SAP - V5.11
         <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">Push final scores to the bottom of the SEC slate to keep live action at the top.</small>
       </div>
 
+      <!-- Spoiler Shield Expiration Time inside Drawer -->
+      <div>
+        <label class="form-label fw-bold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
+        <select id="spoilerExpirationSelector" class="form-select bg-dark text-white border-secondary">
+          <option value="0">Sunday 12:00 AM (Midnight)</option>
+          <option value="3">Sunday 3:00 AM</option>
+          <option value="9">Sunday 9:00 AM</option>
+          <option value="12">Sunday 12:00 PM (Noon)</option>
+          <option value="18">Sunday 6:00 PM</option>
+          <option value="24">Monday 12:00 AM (All Sunday)</option>
+        </select>
+        <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">When should the app stop automatically hiding Auburn's final score?</small>
+      </div>
+
       <!-- Week Selector inside Drawer -->
       <div>
         <label class="form-label fw-bold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
@@ -185,7 +199,7 @@ Project Context: WDE Scoreboard SAP - V5.11
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.11
+      WDE Scoreboard App &bull; V5.12
     </div>
   </main>
 
@@ -208,6 +222,8 @@ Project Context: WDE Scoreboard SAP - V5.11
         selectedWeek: 'current',
         auburnScoreUnlocked: sessionStorage.getItem('wde_score_unlocked') === 'true',
         liveFirst: localStorage.getItem('wde_live_first') === 'true',
+        // Default to 3 (3:00 AM) if no preference is saved yet
+        spoilerExpirationHour: localStorage.getItem('wde_spoiler_hour') !== null ? parseInt(localStorage.getItem('wde_spoiler_hour')) : 3,
         isFetching: false,
         cachedData: null
       };
@@ -217,6 +233,7 @@ Project Context: WDE Scoreboard SAP - V5.11
         secGamesList: document.getElementById('secGamesList'),
         weekSelector: document.getElementById('weekSelector'),
         sortFinishedToggle: document.getElementById('sortFinishedToggle'),
+        spoilerExpirationSelector: document.getElementById('spoilerExpirationSelector'),
         statusModeLabel: document.getElementById('statusModeLabel'),
         lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
         btnRefresh: document.getElementById('btnRefresh')
@@ -224,6 +241,9 @@ Project Context: WDE Scoreboard SAP - V5.11
 
       function init() {
         dom.sortFinishedToggle.checked = state.liveFirst;
+        // Set the dropdown to match the saved state
+        dom.spoilerExpirationSelector.value = state.spoilerExpirationHour;
+        
         setupEventListeners();
         fetchScoreboardData();
         startPolling();
@@ -244,6 +264,15 @@ Project Context: WDE Scoreboard SAP - V5.11
         dom.sortFinishedToggle.addEventListener('change', function(e) {
           state.liveFirst = e.target.checked;
           localStorage.setItem('wde_live_first', state.liveFirst);
+          if (state.cachedData) {
+            processAndRender(state.cachedData);
+          }
+        });
+
+        // Event listener for the new Expiration dropdown
+        dom.spoilerExpirationSelector.addEventListener('change', function(e) {
+          state.spoilerExpirationHour = parseInt(e.target.value);
+          localStorage.setItem('wde_spoiler_hour', state.spoilerExpirationHour);
           if (state.cachedData) {
             processAndRender(state.cachedData);
           }
@@ -372,19 +401,17 @@ Project Context: WDE Scoreboard SAP - V5.11
           return;
         }
 
-        // --- NEW SPOILER LOGIC (V5.11) ---
         var now = new Date();
         var day = now.getDay();
         var hours = now.getHours();
         
-        // Window applies Thursday through Saturday, and Sunday before 3 AM
-        var isSpoilerWindow = (day >= 4 && day <= 6) || (day === 0 && hours < 3);
+        // Shield applies Thursday through Saturday, and Sunday before the selected expiration hour
+        var isSpoilerWindow = (day >= 4 && day <= 6) || (day === 0 && hours < state.spoilerExpirationHour);
         
         var isLive = game.state === 'in';
         var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
         
         var needsShield = (isLive || isRecentFinal) && !state.auburnScoreUnlocked;
-        // ---------------------------------
 
         dom.auburnSection.innerHTML = 
           '<div class="game-card game-card-auburn">' +
