@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.5
+Project Context: WDE Scoreboard SAP - V5.6
 </script>
 
 <!DOCTYPE html>
@@ -63,6 +63,18 @@ Project Context: WDE Scoreboard SAP - V5.5
   <style>
     body { background-color: #071526; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
     .navbar-auburn { background-color: #0C2340; border-bottom: 2px solid #E87722; }
+    
+    /* Responsive Header Scaling */
+    .nav-logo { width: 40px; height: 40px; }
+    .nav-title { font-family: 'Graduate', sans-serif; font-size: 1.5rem; line-height: 0.9; letter-spacing: 1px; margin-top: 4px; }
+    .nav-controls-container { gap: 10px; margin-top: 4px; }
+    
+    @media (min-width: 576px) {
+      .nav-logo { width: 54px; height: 54px; }
+      .nav-title { font-size: 2.5rem; line-height: 0.85; margin-top: 6px; }
+      .nav-controls-container { margin-top: 0; }
+    }
+
     .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
     .game-card-auburn { border: 2px solid #E87722; box-shadow: 0 4px 15px rgba(232, 119, 34, 0.2); }
     .game-card-double-ranked { border: 1px solid #D4AF37; }
@@ -95,20 +107,20 @@ Project Context: WDE Scoreboard SAP - V5.5
 <body>
 
   <header class="navbar navbar-auburn sticky-top px-3 py-2">
-    <div class="container-fluid d-flex justify-content-between align-items-center p-0">
-      <div class="d-flex align-items-center gap-3">
-        <img src="https://poozr.github.io/wde-assets/LogoFavicon.ico" alt="WDE Logo" style="height: 54px; width: 54px;">
+    <div class="container-fluid d-flex flex-wrap justify-content-between align-items-center p-0 gap-2">
+      <div class="d-flex align-items-center gap-2 gap-sm-3">
+        <img src="https://poozr.github.io/wde-assets/LogoFavicon.ico" alt="WDE Logo" class="nav-logo">
         <div class="d-flex flex-column justify-content-center">
-          <h1 class="mb-0 text-white text-uppercase" style="font-family: 'Graduate', sans-serif; font-size: 2.5rem; line-height: 0.85; letter-spacing: 1px; margin-top: 6px;">WDE SCOREBOARD</h1>
+          <h1 class="mb-0 text-white text-uppercase nav-title">WDE SCOREBOARD</h1>
           <small id="statusModeLabel" class="mt-1" style="color: rgba(255,255,255,0.75); font-size: 0.75rem; font-family: sans-serif; line-height: 1;">Loading SEC Slate...</small>
         </div>
       </div>
 
-      <div class="d-flex align-items-center gap-3">
+      <div class="d-flex align-items-center flex-wrap justify-content-end nav-controls-container">
         <!-- Live First Toggle -->
         <div class="form-check form-switch mb-0 d-flex align-items-center" title="Sort Final games to the bottom">
           <input class="form-check-input mt-0" type="checkbox" role="switch" id="sortFinishedToggle">
-          <label class="form-check-label text-white ms-2" for="sortFinishedToggle" style="font-size: 0.7rem; white-space: nowrap; cursor: pointer;">Live First</label>
+          <label class="form-check-label text-white ms-2 me-2" for="sortFinishedToggle" style="font-size: 0.7rem; white-space: nowrap; cursor: pointer;">Live First</label>
         </div>
         
         <!-- Week Selector -->
@@ -151,7 +163,7 @@ Project Context: WDE Scoreboard SAP - V5.5
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.5
+      WDE Scoreboard App &bull; V5.6
     </div>
   </main>
 
