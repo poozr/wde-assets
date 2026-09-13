@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.9
+Project Context: WDE Scoreboard SAP - V5.10
 </script>
 
 <!DOCTYPE html>
@@ -17,11 +17,11 @@ Project Context: WDE Scoreboard SAP - V5.9
   <title>WDE Scoreboard</title>
 
   <!-- Desktop Browser Favicons -->
-  <link rel="shortcut icon" type="image/x-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
-  <link rel="icon" type="image/x-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
+  <link rel="shortcut icon" type="image/png" href="https://poozr.github.io/wde-assets/LogoAppIcon.png">
+  <link rel="icon" type="image/png" href="https://poozr.github.io/wde-assets/LogoAppIcon.png">
   
   <!-- Mobile Launcher Icon -->
-  <link rel="apple-touch-icon" href="https://poozr.github.io/wde-assets/LogoFavicon.ico">
+  <link rel="apple-touch-icon" href="https://poozr.github.io/wde-assets/LogoAppIcon.png">
 
   <!-- Google Fonts: Graduate -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,8 +31,8 @@ Project Context: WDE Scoreboard SAP - V5.9
   <!-- Inline Web App Manifest & Service Worker -->
   <script>
     (function () {
-      // Pointing directly to your ICO file for the Android Manifest
-      var iconUrl = "https://poozr.github.io/wde-assets/LogoFavicon.ico";
+      // Pointing directly to your PNG file for the Android Manifest
+      var iconUrl = "https://poozr.github.io/wde-assets/LogoAppIcon.png";
       var manifest = {
         name: "WDE Scoreboard",
         short_name: "WDE",
@@ -41,8 +41,8 @@ Project Context: WDE Scoreboard SAP - V5.9
         background_color: "#071526",
         theme_color: "#0C2340",
         icons: [
-          { src: iconUrl, sizes: "192x192", type: "image/x-icon", purpose: "any maskable" },
-          { src: iconUrl, sizes: "512x512", type: "image/x-icon", purpose: "any maskable" }
+          { src: iconUrl, sizes: "192x192", type: "image/png", purpose: "any maskable" },
+          { src: iconUrl, sizes: "512x512", type: "image/png", purpose: "any maskable" }
         ]
       };
       var manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
@@ -112,7 +112,7 @@ Project Context: WDE Scoreboard SAP - V5.9
   <header class="navbar navbar-auburn sticky-top px-3 py-2">
     <div class="container-fluid d-flex justify-content-between align-items-center p-0">
       <div class="d-flex align-items-center gap-2 gap-sm-3">
-        <img src="https://poozr.github.io/wde-assets/LogoFavicon.ico" alt="WDE Logo" class="nav-logo">
+        <img src="https://poozr.github.io/wde-assets/LogoAppIcon.png" alt="WDE Logo" class="nav-logo">
         <div class="d-flex flex-column justify-content-center">
           <h1 class="mb-0 text-white text-uppercase nav-title">WDE SCOREBOARD</h1>
           <small id="statusModeLabel" class="mt-1" style="color: rgba(255,255,255,0.75); font-size: 0.75rem; font-family: sans-serif; line-height: 1;">Loading SEC Slate...</small>
@@ -186,7 +186,7 @@ Project Context: WDE Scoreboard SAP - V5.9
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.9
+      WDE Scoreboard App &bull; V5.10
     </div>
   </main>
 
@@ -235,7 +235,6 @@ Project Context: WDE Scoreboard SAP - V5.9
           state.selectedWeek = e.target.value;
           fetchScoreboardData();
           
-          // Optionally auto-close the drawer when week is selected
           var offcanvasEl = document.getElementById('settingsDrawer');
           var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
           if(offcanvasInstance) {
@@ -307,7 +306,6 @@ Project Context: WDE Scoreboard SAP - V5.9
 
         var today = new Date().getDay();
         otherGames.sort(function (a, b) {
-          // 1. Toggle override: Push finals to the bottom, live games to the top
           if (state.liveFirst) {
             var aIsFinal = a.state === 'post';
             var bIsFinal = b.state === 'post';
@@ -320,7 +318,6 @@ Project Context: WDE Scoreboard SAP - V5.9
             if (!aIsLive && bIsLive) return 1;
           }
           
-          // 2. Standard sorting: Sunday ranking sort vs standard chronological
           if (today === 0 && !state.liveFirst) {
             var aRanked = a.homeTeam.rank || a.awayTeam.rank ? 1 : 0;
             var bRanked = b.homeTeam.rank || b.awayTeam.rank ? 1 : 0;
