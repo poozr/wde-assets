@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.6
+Project Context: WDE Scoreboard SAP - V5.7
 </script>
 
 <!DOCTYPE html>
@@ -67,12 +67,10 @@ Project Context: WDE Scoreboard SAP - V5.6
     /* Responsive Header Scaling */
     .nav-logo { width: 40px; height: 40px; }
     .nav-title { font-family: 'Graduate', sans-serif; font-size: 1.5rem; line-height: 0.9; letter-spacing: 1px; margin-top: 4px; }
-    .nav-controls-container { gap: 10px; margin-top: 4px; }
     
     @media (min-width: 576px) {
       .nav-logo { width: 54px; height: 54px; }
       .nav-title { font-size: 2.5rem; line-height: 0.85; margin-top: 6px; }
-      .nav-controls-container { margin-top: 0; }
     }
 
     .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
@@ -99,15 +97,18 @@ Project Context: WDE Scoreboard SAP - V5.6
     .spinning { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
     @keyframes spin { 100% { transform: rotate(360deg); } }
     
-    /* Toggle Switch Styling Tweaks for Dark Mode */
+    /* Toggle Switch Styling Tweaks */
     .form-switch .form-check-input { cursor: pointer; border-color: rgba(255,255,255,0.25); }
     .form-switch .form-check-input:checked { background-color: #E87722; border-color: #E87722; }
+    
+    /* Offcanvas dark mode overrides */
+    .offcanvas { background-color: #071526 !important; border-left: 1px solid rgba(255,255,255,0.1); }
   </style>
 </head>
 <body>
 
   <header class="navbar navbar-auburn sticky-top px-3 py-2">
-    <div class="container-fluid d-flex flex-wrap justify-content-between align-items-center p-0 gap-2">
+    <div class="container-fluid d-flex justify-content-between align-items-center p-0">
       <div class="d-flex align-items-center gap-2 gap-sm-3">
         <img src="https://poozr.github.io/wde-assets/LogoFavicon.ico" alt="WDE Logo" class="nav-logo">
         <div class="d-flex flex-column justify-content-center">
@@ -116,16 +117,36 @@ Project Context: WDE Scoreboard SAP - V5.6
         </div>
       </div>
 
-      <div class="d-flex align-items-center flex-wrap justify-content-end nav-controls-container">
-        <!-- Live First Toggle -->
-        <div class="form-check form-switch mb-0 d-flex align-items-center" title="Sort Final games to the bottom">
-          <input class="form-check-input mt-0" type="checkbox" role="switch" id="sortFinishedToggle">
-          <label class="form-check-label text-white ms-2 me-2" for="sortFinishedToggle" style="font-size: 0.7rem; white-space: nowrap; cursor: pointer;">Live First</label>
+      <!-- Drawer Trigger Button -->
+      <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
+        <i class="bi bi-sliders fs-4"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Settings Offcanvas Drawer -->
+  <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
+    <div class="offcanvas-header border-bottom border-secondary">
+      <h5 class="offcanvas-title fw-bold" id="settingsDrawerLabel" style="font-family: 'Graduate', sans-serif; letter-spacing: 1px; color: #E87722;">SETTINGS</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column gap-4 mt-2">
+      
+      <!-- Live First Toggle inside Drawer -->
+      <div>
+        <label class="form-label fw-bold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
+        <div class="form-check form-switch d-flex align-items-center p-0">
+          <input class="form-check-input ms-0 mt-0 me-3" type="checkbox" role="switch" id="sortFinishedToggle" style="width: 2.5em; height: 1.25em;">
+          <label class="form-check-label text-white" for="sortFinishedToggle" style="cursor: pointer; font-size: 1rem;">Live Games First</label>
         </div>
-        
-        <!-- Week Selector -->
-        <select id="weekSelector" class="form-select form-select-sm bg-dark text-white border-secondary" style="font-size: 0.8rem; width: auto;">
-          <option value="current" selected>Current</option>
+        <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">Push final scores to the bottom of the SEC slate to keep live action at the top.</small>
+      </div>
+
+      <!-- Week Selector inside Drawer -->
+      <div>
+        <label class="form-label fw-bold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
+        <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
+          <option value="current" selected>Current Week</option>
           <option value="1">Week 1</option>
           <option value="2">Week 2</option>
           <option value="3">Week 3</option>
@@ -140,11 +161,11 @@ Project Context: WDE Scoreboard SAP - V5.6
           <option value="12">Week 12</option>
           <option value="13">Week 13</option>
           <option value="14">Week 14</option>
-          <option value="15">Champ</option>
+          <option value="15">Conference Champ</option>
         </select>
       </div>
     </div>
-  </header>
+  </div>
 
   <main class="container py-3" style="max-width: 600px;">
     <section id="auburnSection" class="mb-3"></section>
@@ -163,7 +184,7 @@ Project Context: WDE Scoreboard SAP - V5.6
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.6
+      WDE Scoreboard App &bull; V5.7
     </div>
   </main>
 
@@ -211,6 +232,13 @@ Project Context: WDE Scoreboard SAP - V5.6
         dom.weekSelector.addEventListener('change', function (e) {
           state.selectedWeek = e.target.value;
           fetchScoreboardData();
+          
+          // Optionally auto-close the drawer when week is selected
+          var offcanvasEl = document.getElementById('settingsDrawer');
+          var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+          if(offcanvasInstance) {
+            offcanvasInstance.hide();
+          }
         });
         
         dom.sortFinishedToggle.addEventListener('change', function(e) {
