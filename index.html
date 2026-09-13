@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.13
+Project Context: WDE Scoreboard SAP - V5.14
 </script>
 
 <!DOCTYPE html>
@@ -135,17 +135,17 @@ Project Context: WDE Scoreboard SAP - V5.13
       
       <!-- Live First Toggle inside Drawer -->
       <div>
-        <label class="form-label fw-bold text-muted text-uppercase mb-3" style="font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
+        <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
         <div class="form-check form-switch d-flex align-items-center p-0">
           <input class="form-check-input ms-0 mt-0 me-3" type="checkbox" role="switch" id="sortFinishedToggle" style="width: 2.5em; height: 1.25em;">
           <label class="form-check-label text-white" for="sortFinishedToggle" style="cursor: pointer; font-size: 1rem;">Live Games First</label>
         </div>
-        <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">Push final scores to the bottom of the SEC slate to keep live action at the top.</small>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the SEC slate to keep live action at the top.</small>
       </div>
 
       <!-- Spoiler Shield Expiration Time inside Drawer -->
       <div>
-        <label class="form-label fw-bold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
+        <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
         <select id="spoilerExpirationSelector" class="form-select bg-dark text-white border-secondary">
           <option value="0">Midnight (End of Game Day)</option>
           <option value="3">3:00 AM (Next Day)</option>
@@ -154,12 +154,12 @@ Project Context: WDE Scoreboard SAP - V5.13
           <option value="18">6:00 PM (Next Day)</option>
           <option value="24">Midnight (Full Next Day Protected)</option>
         </select>
-        <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">When should the app stop automatically hiding Auburn's final score?</small>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">When should the app stop automatically hiding Auburn's final score?</small>
       </div>
 
       <!-- Week Selector inside Drawer -->
       <div>
-        <label class="form-label fw-bold text-muted text-uppercase mb-2" style="font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
+        <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
         <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
           <option value="current" selected>Current Week</option>
           <option value="1">Week 1</option>
@@ -199,7 +199,7 @@ Project Context: WDE Scoreboard SAP - V5.13
 
     <!-- Brightened Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.13
+      WDE Scoreboard App &bull; V5.14
     </div>
   </main>
 
@@ -402,7 +402,7 @@ Project Context: WDE Scoreboard SAP - V5.13
 
         var now = new Date();
         
-        // --- DYNAMIC SPOILER LOGIC (V5.13) ---
+        // --- DYNAMIC SPOILER LOGIC (V5.13/V5.14) ---
         // Establish exactly what day the game kicked off
         var gameDate = new Date(game.date);
         
