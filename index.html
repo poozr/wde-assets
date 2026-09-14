@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.7
+Project Context: WDE Scoreboard SAP - V6.8
 </script>
 
 <!DOCTYPE html>
@@ -239,10 +239,21 @@ Project Context: WDE Scoreboard SAP - V6.7
         </select>
       </div>
 
-      <div id="shareAppContainer" style="display: none; margin-top: auto; padding-top: 20px;" class="border-top border-secondary">
-        <button id="btnShare" class="btn btn-outline-light w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
-          <i class="bi bi-share-fill"></i> Share App
-        </button>
+      <div style="margin-top: auto; padding-top: 20px;" class="border-top border-secondary">
+        
+        <!-- App Install Container (Dynamically Revealed) -->
+        <div id="installAppContainer" style="display: none; margin-bottom: 12px;">
+          <button id="btnInstall" class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-download"></i> Install App
+          </button>
+        </div>
+
+        <div id="shareAppContainer" style="display: none;">
+          <button id="btnShare" class="btn btn-outline-light w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+            <i class="bi bi-share-fill"></i> Share App
+          </button>
+        </div>
+
       </div>
 
       <div class="text-center mt-3 pt-3 border-top border-secondary">
@@ -269,7 +280,7 @@ Project Context: WDE Scoreboard SAP - V6.7
 
     <!-- Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.7
+      WDE Scoreboard App &bull; V6.8
     </div>
   </main>
 
@@ -302,6 +313,8 @@ Project Context: WDE Scoreboard SAP - V6.7
         openAccordions: []
       };
 
+      var deferredPrompt;
+
       var dom = {
         auburnSection: document.getElementById('auburnSection'),
         secGamesList: document.getElementById('secGamesList'),
@@ -314,7 +327,9 @@ Project Context: WDE Scoreboard SAP - V6.7
         slateTitleLabel: document.getElementById('slateTitleLabel'),
         btnRefresh: document.getElementById('btnRefresh'),
         btnShare: document.getElementById('btnShare'),
-        shareAppContainer: document.getElementById('shareAppContainer')
+        shareAppContainer: document.getElementById('shareAppContainer'),
+        btnInstall: document.getElementById('btnInstall'),
+        installAppContainer: document.getElementById('installAppContainer')
       };
 
       function init() {
@@ -328,6 +343,36 @@ Project Context: WDE Scoreboard SAP - V6.7
       }
 
       function setupEventListeners() {
+        // --- PWA Installation Logic ---
+        window.addEventListener('beforeinstallprompt', function (e) {
+          e.preventDefault(); // Prevent standard mini-infobar
+          deferredPrompt = e; // Stash event
+          if (dom.installAppContainer) {
+            dom.installAppContainer.style.display = 'block'; // Reveal Install button
+          }
+        });
+
+        if (dom.btnInstall) {
+          dom.btnInstall.addEventListener('click', function () {
+            if (dom.installAppContainer) dom.installAppContainer.style.display = 'none';
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              deferredPrompt.userChoice.then(function (choiceResult) {
+                if (choiceResult.outcome !== 'accepted' && dom.installAppContainer) {
+                  dom.installAppContainer.style.display = 'block'; // Unhide if dismissed
+                }
+                deferredPrompt = null;
+              });
+            }
+          });
+        }
+
+        window.addEventListener('appinstalled', function () {
+          if (dom.installAppContainer) dom.installAppContainer.style.display = 'none';
+          deferredPrompt = null;
+        });
+        // -----------------------------
+
         dom.weekSelector.addEventListener('change', function (e) {
           state.selectedWeek = e.target.value;
           state.openAccordions = [];
@@ -455,7 +500,6 @@ Project Context: WDE Scoreboard SAP - V6.7
 
         Promise.all(fetchPromises)
           .then(results => {
-            // Intercept actual week from ESPN API Payload
             if (results[0] && results[0].week) {
                state.displayWeek = results[0].week.number;
             } else {
