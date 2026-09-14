@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V5.14
+Project Context: WDE Scoreboard SAP - V6.0
 </script>
 
 <!DOCTYPE html>
@@ -114,14 +114,19 @@ Project Context: WDE Scoreboard SAP - V5.14
         <img src="https://poozr.github.io/wde-assets/LogoAppIcon.png" alt="WDE Logo" class="nav-logo">
         <div class="d-flex flex-column justify-content-center">
           <h1 class="mb-0 text-white text-uppercase nav-title">WDE SCOREBOARD</h1>
-          <small id="statusModeLabel" class="mt-1" style="color: rgba(255,255,255,0.75); font-size: 0.75rem; font-family: sans-serif; line-height: 1;">Loading SEC Slate...</small>
+          <small id="statusModeLabel" class="mt-1" style="color: rgba(255,255,255,0.75); font-size: 0.75rem; font-family: sans-serif; line-height: 1;">Loading Slate...</small>
         </div>
       </div>
 
-      <!-- Drawer Trigger Button -->
-      <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
-        <i class="bi bi-sliders fs-4"></i>
-      </button>
+      <!-- Header Controls: Native Share & Drawer Trigger -->
+      <div class="d-flex align-items-center gap-3">
+        <button id="btnShare" class="btn btn-link text-white p-0 text-decoration-none" aria-label="Share App" style="display: none;">
+          <i class="bi bi-share-fill fs-5"></i>
+        </button>
+        <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
+          <i class="bi bi-sliders fs-4"></i>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -133,6 +138,16 @@ Project Context: WDE Scoreboard SAP - V5.14
     </div>
     <div class="offcanvas-body d-flex flex-column gap-4 mt-2">
       
+      <!-- Top 25 Toggle inside Drawer -->
+      <div>
+        <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Data Feed</label>
+        <div class="form-check form-switch d-flex align-items-center p-0">
+          <input class="form-check-input ms-0 mt-0 me-3" type="checkbox" role="switch" id="includeTop25Toggle" style="width: 2.5em; height: 1.25em;">
+          <label class="form-check-label text-white" for="includeTop25Toggle" style="cursor: pointer; font-size: 1rem;">Include Top 25</label>
+        </div>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Merge the national Top 25 games into your SEC slate.</small>
+      </div>
+
       <!-- Live First Toggle inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
@@ -140,7 +155,7 @@ Project Context: WDE Scoreboard SAP - V5.14
           <input class="form-check-input ms-0 mt-0 me-3" type="checkbox" role="switch" id="sortFinishedToggle" style="width: 2.5em; height: 1.25em;">
           <label class="form-check-label text-white" for="sortFinishedToggle" style="cursor: pointer; font-size: 1rem;">Live Games First</label>
         </div>
-        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the SEC slate to keep live action at the top.</small>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the feed to keep live action at the top.</small>
       </div>
 
       <!-- Spoiler Shield Expiration Time inside Drawer -->
@@ -186,20 +201,21 @@ Project Context: WDE Scoreboard SAP - V5.14
     <section id="auburnSection" class="mb-3"></section>
     
     <div class="d-flex justify-content-between align-items-center px-1 mb-2">
-      <span class="text-uppercase fw-bold text-muted" style="font-size: 0.75rem; letter-spacing: 0.08em;">SEC Slate</span>
+      <span class="text-uppercase fw-bold text-muted" style="font-size: 0.75rem; letter-spacing: 0.08em;" id="slateTitleLabel">SEC Slate</span>
       <span class="text-muted" style="font-size: 0.7rem;" id="lastUpdatedLabel"></span>
     </div>
 
     <section id="secGamesList" class="d-flex flex-column gap-2">
       <div class="text-center py-5 text-muted">
         <div class="spinner-border spinner-border-sm text-warning mb-2"></div>
-        <div>Loading SEC matchups...</div>
+        <div>Loading matchups...</div>
       </div>
     </section>
 
-    <!-- Brightened Version Footer -->
+    <!-- Version Footer & Attribution -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V5.14
+      WDE Scoreboard App &bull; V6.0
+      <div class="mt-2 fw-bold" style="font-size: 0.55rem; opacity: 0.6; letter-spacing: 1px;">Data provided by ESPN API</div>
     </div>
   </main>
 
@@ -222,7 +238,7 @@ Project Context: WDE Scoreboard SAP - V5.14
         selectedWeek: 'current',
         auburnScoreUnlocked: sessionStorage.getItem('wde_score_unlocked') === 'true',
         liveFirst: localStorage.getItem('wde_live_first') === 'true',
-        // Default to 3 (3:00 AM) if no preference is saved yet
+        includeTop25: localStorage.getItem('wde_include_top25') === 'true',
         spoilerExpirationHour: localStorage.getItem('wde_spoiler_hour') !== null ? parseInt(localStorage.getItem('wde_spoiler_hour')) : 3,
         isFetching: false,
         cachedData: null
@@ -233,14 +249,18 @@ Project Context: WDE Scoreboard SAP - V5.14
         secGamesList: document.getElementById('secGamesList'),
         weekSelector: document.getElementById('weekSelector'),
         sortFinishedToggle: document.getElementById('sortFinishedToggle'),
+        includeTop25Toggle: document.getElementById('includeTop25Toggle'),
         spoilerExpirationSelector: document.getElementById('spoilerExpirationSelector'),
         statusModeLabel: document.getElementById('statusModeLabel'),
         lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
-        btnRefresh: document.getElementById('btnRefresh')
+        slateTitleLabel: document.getElementById('slateTitleLabel'),
+        btnRefresh: document.getElementById('btnRefresh'),
+        btnShare: document.getElementById('btnShare')
       };
 
       function init() {
         dom.sortFinishedToggle.checked = state.liveFirst;
+        dom.includeTop25Toggle.checked = state.includeTop25;
         dom.spoilerExpirationSelector.value = state.spoilerExpirationHour;
         
         setupEventListeners();
@@ -252,29 +272,25 @@ Project Context: WDE Scoreboard SAP - V5.14
         dom.weekSelector.addEventListener('change', function (e) {
           state.selectedWeek = e.target.value;
           fetchScoreboardData();
-          
-          var offcanvasEl = document.getElementById('settingsDrawer');
-          var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
-          if(offcanvasInstance) {
-            offcanvasInstance.hide();
-          }
+          closeDrawer();
         });
         
         dom.sortFinishedToggle.addEventListener('change', function(e) {
           state.liveFirst = e.target.checked;
           localStorage.setItem('wde_live_first', state.liveFirst);
-          if (state.cachedData) {
-            processAndRender(state.cachedData);
-          }
+          if (state.cachedData) processAndRender(state.cachedData);
         });
 
-        // Save new expiration preference when changed
+        dom.includeTop25Toggle.addEventListener('change', function(e) {
+          state.includeTop25 = e.target.checked;
+          localStorage.setItem('wde_include_top25', state.includeTop25);
+          fetchScoreboardData();
+        });
+
         dom.spoilerExpirationSelector.addEventListener('change', function(e) {
           state.spoilerExpirationHour = parseInt(e.target.value);
           localStorage.setItem('wde_spoiler_hour', state.spoilerExpirationHour);
-          if (state.cachedData) {
-            processAndRender(state.cachedData);
-          }
+          if (state.cachedData) processAndRender(state.cachedData);
         });
 
         dom.btnRefresh.addEventListener('click', function () {
@@ -283,6 +299,36 @@ Project Context: WDE Scoreboard SAP - V5.14
           icon.classList.add('spinning');
           fetchScoreboardData(function () { icon.classList.remove('spinning'); });
         });
+
+        // Focus State Polling Logic
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            if (state.pollTimer) clearInterval(state.pollTimer);
+          } else {
+            fetchScoreboardData();
+            startPolling();
+          }
+        });
+
+        // Native Web Share Initialization
+        if (dom.btnShare) {
+          if (navigator.share) {
+            dom.btnShare.style.display = 'inline-block';
+            dom.btnShare.addEventListener('click', function () {
+              navigator.share({
+                title: 'WDE Scoreboard',
+                text: 'Check out the live Auburn and SEC scores!',
+                url: window.location.href
+              }).catch(function(err) { console.error('Share failed:', err); });
+            });
+          }
+        }
+      }
+
+      function closeDrawer() {
+        var offcanvasEl = document.getElementById('settingsDrawer');
+        var offcanvasInstance = bootstrap.Offcanvas.getInstance(offcanvasEl);
+        if (offcanvasInstance) offcanvasInstance.hide();
       }
 
       function startPolling() {
@@ -294,14 +340,36 @@ Project Context: WDE Scoreboard SAP - V5.14
 
       function fetchScoreboardData(callback) {
         state.isFetching = true;
-        var url = state.baseUrl + '?groups=' + state.secGroupId;
-        if (state.selectedWeek !== 'current') url += '&week=' + state.selectedWeek;
+        
+        // Always fetch the SEC Group
+        var secUrl = state.baseUrl + '?groups=' + state.secGroupId;
+        if (state.selectedWeek !== 'current') secUrl += '&week=' + state.selectedWeek;
+        var fetchPromises = [fetch(secUrl).then(res => res.json())];
 
-        fetch(url)
-          .then(res => res.json())
-          .then(data => {
-            state.cachedData = data;
-            processAndRender(data);
+        // Fetch the National Top 25 (default API behavior without groups) if toggled
+        if (state.includeTop25) {
+          var top25Url = state.baseUrl; 
+          if (state.selectedWeek !== 'current') top25Url += '?week=' + state.selectedWeek;
+          fetchPromises.push(fetch(top25Url).then(res => res.json()));
+        }
+
+        Promise.all(fetchPromises)
+          .then(results => {
+            var allEvents = [];
+            var seenIds = new Set();
+            
+            results.forEach(data => {
+              (data.events || []).forEach(evt => {
+                if (!seenIds.has(evt.id)) {
+                  seenIds.add(evt.id);
+                  allEvents.push(evt);
+                }
+              });
+            });
+
+            var combinedData = { events: allEvents };
+            state.cachedData = combinedData;
+            processAndRender(combinedData);
             state.isFetching = false;
             if (callback) callback();
           })
@@ -365,7 +433,7 @@ Project Context: WDE Scoreboard SAP - V5.14
         
         return {
           id: event.id,
-          date: event.date, // ISO timestamp of kickoff (e.g. "2026-09-12T19:30Z")
+          date: event.date,
           state: (event.status && event.status.type) ? event.status.type.state : 'pre',
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
@@ -391,7 +459,11 @@ Project Context: WDE Scoreboard SAP - V5.14
         var now = new Date();
         dom.lastUpdatedLabel.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         var today = now.getDay();
-        dom.statusModeLabel.textContent = today === 0 ? 'Sunday SEC Recap' : (today === 6 ? 'Saturday Game Day Live' : 'Upcoming Weekend Slate');
+        dom.statusModeLabel.textContent = today === 0 ? 'Sunday Recap' : (today === 6 ? 'Saturday Game Day Live' : 'Upcoming Weekend Slate');
+        
+        if (dom.slateTitleLabel) {
+           dom.slateTitleLabel.textContent = state.includeTop25 ? 'SEC & Top 25 Slate' : 'SEC Slate';
+        }
       }
 
       function renderAuburnGame(game) {
@@ -401,32 +473,25 @@ Project Context: WDE Scoreboard SAP - V5.14
         }
 
         var now = new Date();
-        
-        // --- DYNAMIC SPOILER LOGIC (V5.13/V5.14) ---
-        // Establish exactly what day the game kicked off
         var gameDate = new Date(game.date);
         
-        // Build the expiration threshold based on the kickoff date
         var expirationDate = new Date(gameDate);
-        expirationDate.setHours(0, 0, 0, 0); // Roll back to Midnight of the game day
-        expirationDate.setDate(expirationDate.getDate() + 1); // Push forward 1 full day (Midnight the next day)
-        expirationDate.setHours(state.spoilerExpirationHour); // Add the user's selected hour
+        expirationDate.setHours(0, 0, 0, 0); 
+        expirationDate.setDate(expirationDate.getDate() + 1); 
+        expirationDate.setHours(state.spoilerExpirationHour); 
         
-        // The shield should remain active if the current time is before the calculated expiration
         var isSpoilerWindow = now < expirationDate;
-        
         var isLive = game.state === 'in';
         var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
         
         var needsShield = (isLive || isRecentFinal) && !state.auburnScoreUnlocked;
-        // ------------------------------------
 
         dom.auburnSection.innerHTML = 
           '<div class="game-card game-card-auburn">' +
             '<div class="auburn-badge-strip">Auburn Matchup</div>' +
             '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
               (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-warning"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealAuburn" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
-              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game) + buildScoreRowHtml(game) + '</div>' +
+              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + '</div>' +
             '</div>' +
           '</div>';
 
@@ -439,11 +504,7 @@ Project Context: WDE Scoreboard SAP - V5.14
               if (res.isConfirmed) {
                 state.auburnScoreUnlocked = true;
                 sessionStorage.setItem('wde_score_unlocked', 'true');
-                if (state.cachedData) {
-                   processAndRender(state.cachedData);
-                } else {
-                   fetchScoreboardData();
-                }
+                if (state.cachedData) fetchScoreboardData();
               }
             });
           });
@@ -466,10 +527,16 @@ Project Context: WDE Scoreboard SAP - V5.14
         }).join('') : '<div class="text-center py-4 text-muted">No conference games.</div>';
       }
 
-      function buildGameHeaderHtml(game, doubleRanked) {
+      function buildGameHeaderHtml(game, doubleRanked, isAuburnGame) {
         var timeLabel = game.state === 'pre' ? formatKickoffTime(game.date) : (game.statusDetail || 'LIVE');
         var badgeClass = game.state === 'in' ? 'status-live' : (game.state === 'post' ? 'status-final' : 'status-scheduled');
-        return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge bg-secondary" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + (doubleRanked ? '<span class="badge bg-warning text-dark fw-bold" style="font-size: 0.65rem;">TOP 25 CLASH</span>' : '') + '</div>';
+        
+        // National Broadcast Highlighter
+        var majorNetworks = ['ABC', 'CBS', 'ESPN', 'FOX', 'NBC'];
+        var isMajorNetwork = majorNetworks.some(net => game.tvStation && game.tvStation.toUpperCase() === net);
+        var tvBadgeClass = isMajorNetwork ? 'bg-danger' : 'bg-secondary';
+
+        return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge ' + tvBadgeClass + '" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + (doubleRanked && !isAuburnGame ? '<span class="badge bg-warning text-dark fw-bold" style="font-size: 0.65rem;">TOP 25 CLASH</span>' : '') + '</div>';
       }
 
       function buildScoreRowHtml(game) {
