@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.0
+Project Context: WDE Scoreboard SAP - V6.1
 </script>
 
 <!DOCTYPE html>
@@ -74,12 +74,16 @@ Project Context: WDE Scoreboard SAP - V6.0
       .nav-title { font-size: 2.5rem; line-height: 0.85; margin-top: 6px; }
     }
 
-    .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; }
+    .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; display: flex; flex-direction: column; }
     .game-card-auburn { border: 2px solid #E87722; box-shadow: 0 4px 15px rgba(232, 119, 34, 0.2); }
     .game-card-double-ranked { border: 1px solid #D4AF37; }
     .game-card-single-ranked { border-left: 4px solid #E87722; }
     .auburn-badge-strip { background-color: #E87722; color: #0C2340; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
-    .team-logo { width: 36px; height: 36px; object-fit: contain; }
+    
+    /* Interactive Team Logo */
+    .team-logo { width: 36px; height: 36px; object-fit: contain; transition: transform 0.2s; cursor: pointer; }
+    .team-logo:hover { transform: scale(1.1); }
+    
     .rank-badge { color: #D4AF37; font-size: 0.75rem; margin-right: 6px; font-weight: bold; }
     .team-name { font-weight: 600; font-size: 1rem; }
     .team-record { font-size: 0.7rem; color: #adb5bd; }
@@ -88,6 +92,12 @@ Project Context: WDE Scoreboard SAP - V6.0
     .status-live { background-color: #dc3545; color: white; }
     .status-final { background-color: #495057; color: white; }
     .status-scheduled { background-color: transparent; border: 1px solid #6c757d; color: #ced4da; }
+    
+    /* Stats Ticker */
+    .game-ticker { font-size: 0.7rem; color: #adb5bd; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 12px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .game-ticker::-webkit-scrollbar { display: none; }
+    .ticker-content { display: inline-block; padding-bottom: 2px; }
+
     .spoiler-container { position: relative; }
     .spoiler-blur { filter: blur(12px); pointer-events: none; user-select: none; opacity: 0.6; }
     .spoiler-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10; padding: 20px; text-align: center; }
@@ -118,11 +128,8 @@ Project Context: WDE Scoreboard SAP - V6.0
         </div>
       </div>
 
-      <!-- Header Controls: Native Share & Drawer Trigger -->
+      <!-- Header Controls: Drawer Trigger Only -->
       <div class="d-flex align-items-center gap-3">
-        <button id="btnShare" class="btn btn-link text-white p-0 text-decoration-none" aria-label="Share App" style="display: none;">
-          <i class="bi bi-share-fill fs-5"></i>
-        </button>
         <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
           <i class="bi bi-sliders fs-4"></i>
         </button>
@@ -194,6 +201,14 @@ Project Context: WDE Scoreboard SAP - V6.0
           <option value="15">Conference Champ</option>
         </select>
       </div>
+
+      <!-- Share Native Functionality -->
+      <div id="shareAppContainer" style="display: none; margin-top: auto; padding-top: 20px;" class="border-top border-secondary">
+        <button id="btnShare" class="btn btn-outline-light w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
+          <i class="bi bi-share-fill"></i> Share App
+        </button>
+      </div>
+
     </div>
   </div>
 
@@ -214,7 +229,7 @@ Project Context: WDE Scoreboard SAP - V6.0
 
     <!-- Version Footer & Attribution -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.0
+      WDE Scoreboard App &bull; V6.1
       <div class="mt-2 fw-bold" style="font-size: 0.55rem; opacity: 0.6; letter-spacing: 1px;">Data provided by ESPN API</div>
     </div>
   </main>
@@ -255,7 +270,8 @@ Project Context: WDE Scoreboard SAP - V6.0
         lastUpdatedLabel: document.getElementById('lastUpdatedLabel'),
         slateTitleLabel: document.getElementById('slateTitleLabel'),
         btnRefresh: document.getElementById('btnRefresh'),
-        btnShare: document.getElementById('btnShare')
+        btnShare: document.getElementById('btnShare'),
+        shareAppContainer: document.getElementById('shareAppContainer')
       };
 
       function init() {
@@ -310,18 +326,16 @@ Project Context: WDE Scoreboard SAP - V6.0
           }
         });
 
-        // Native Web Share Initialization
-        if (dom.btnShare) {
-          if (navigator.share) {
-            dom.btnShare.style.display = 'inline-block';
-            dom.btnShare.addEventListener('click', function () {
-              navigator.share({
-                title: 'WDE Scoreboard',
-                text: 'Check out the live Auburn and SEC scores!',
-                url: window.location.href
-              }).catch(function(err) { console.error('Share failed:', err); });
-            });
-          }
+        // Native Web Share inside Drawer
+        if (navigator.share) {
+          dom.shareAppContainer.style.display = 'block';
+          dom.btnShare.addEventListener('click', function () {
+            navigator.share({
+              title: 'WDE Scoreboard',
+              text: 'Check out the live Auburn and SEC scores!',
+              url: window.location.href
+            }).catch(function(err) { console.error('Share failed:', err); });
+          });
         }
       }
 
@@ -341,12 +355,10 @@ Project Context: WDE Scoreboard SAP - V6.0
       function fetchScoreboardData(callback) {
         state.isFetching = true;
         
-        // Always fetch the SEC Group
         var secUrl = state.baseUrl + '?groups=' + state.secGroupId;
         if (state.selectedWeek !== 'current') secUrl += '&week=' + state.selectedWeek;
         var fetchPromises = [fetch(secUrl).then(res => res.json())];
 
-        // Fetch the National Top 25 (default API behavior without groups) if toggled
         if (state.includeTop25) {
           var top25Url = state.baseUrl; 
           if (state.selectedWeek !== 'current') top25Url += '?week=' + state.selectedWeek;
@@ -433,12 +445,13 @@ Project Context: WDE Scoreboard SAP - V6.0
         
         return {
           id: event.id,
-          date: event.date,
+          date: event.date, 
           state: (event.status && event.status.type) ? event.status.type.state : 'pre',
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
           homeTeam: extractTeamDetails(home),
-          awayTeam: extractTeamDetails(away)
+          awayTeam: extractTeamDetails(away),
+          leadersText: extractLeaders(comp)
         };
       }
 
@@ -453,6 +466,22 @@ Project Context: WDE Scoreboard SAP - V6.0
           rank: rank,
           record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : ''
         };
+      }
+
+      function extractLeaders(comp) {
+        if (!comp.leaders || !comp.leaders.length) return '';
+        var leaderItems = [];
+        comp.leaders.forEach(function(cat) {
+          if (cat.leaders && cat.leaders.length > 0) {
+            var leader = cat.leaders[0];
+            var name = leader.athlete ? leader.athlete.shortName : '';
+            var val = leader.displayValue;
+            if (name && val) {
+              leaderItems.push('<span class="fw-bold text-white">' + cat.shortDisplayName + ':</span> ' + name + ' ' + val);
+            }
+          }
+        });
+        return leaderItems.join(' &nbsp;&bull;&nbsp; ');
       }
 
       function updateHeaderMetadata() {
@@ -485,13 +514,15 @@ Project Context: WDE Scoreboard SAP - V6.0
         var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
         
         var needsShield = (isLive || isRecentFinal) && !state.auburnScoreUnlocked;
+        
+        var tickerHtml = game.leadersText ? '<div class="game-ticker"><div class="ticker-content">' + game.leadersText + '</div></div>' : '';
 
         dom.auburnSection.innerHTML = 
           '<div class="game-card game-card-auburn">' +
             '<div class="auburn-badge-strip">Auburn Matchup</div>' +
-            '<div class="p-3 ' + (needsShield ? 'spoiler-container' : '') + '">' +
+            '<div class="p-3 flex-grow-1 ' + (needsShield ? 'spoiler-container' : '') + '">' +
               (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-warning"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealAuburn" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
-              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + '</div>' +
+              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + tickerHtml + '</div>' +
             '</div>' +
           '</div>';
 
@@ -523,7 +554,9 @@ Project Context: WDE Scoreboard SAP - V6.0
             highlightClass = 'game-card-single-ranked';
           }
           
-          return '<div class="game-card p-3 ' + highlightClass + '">' + buildGameHeaderHtml(game, bothRanked) + buildScoreRowHtml(game) + '</div>';
+          var tickerHtml = game.leadersText ? '<div class="game-ticker"><div class="ticker-content">' + game.leadersText + '</div></div>' : '';
+          
+          return '<div class="game-card p-3 ' + highlightClass + '">' + buildGameHeaderHtml(game, bothRanked) + buildScoreRowHtml(game) + tickerHtml + '</div>';
         }).join('') : '<div class="text-center py-4 text-muted">No conference games.</div>';
       }
 
@@ -531,7 +564,6 @@ Project Context: WDE Scoreboard SAP - V6.0
         var timeLabel = game.state === 'pre' ? formatKickoffTime(game.date) : (game.statusDetail || 'LIVE');
         var badgeClass = game.state === 'in' ? 'status-live' : (game.state === 'post' ? 'status-final' : 'status-scheduled');
         
-        // National Broadcast Highlighter
         var majorNetworks = ['ABC', 'CBS', 'ESPN', 'FOX', 'NBC'];
         var isMajorNetwork = majorNetworks.some(net => game.tvStation && game.tvStation.toUpperCase() === net);
         var tvBadgeClass = isMajorNetwork ? 'bg-danger' : 'bg-secondary';
@@ -544,7 +576,8 @@ Project Context: WDE Scoreboard SAP - V6.0
       }
 
       function buildTeamRowHtml(team, isScheduled) {
-        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + (team.logo ? '<img src="' + team.logo + '" class="team-logo">' : '') + '<div><div class="team-name text-white">' + (team.rank ? '<span class="rank-badge">#' + team.rank + '</span>' : '') + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
+        var logoHtml = team.logo ? '<a href="https://www.espn.com/college-football/team/_/id/' + team.id + '" target="_blank" rel="noopener noreferrer" title="View Team Hub"><img src="' + team.logo + '" class="team-logo"></a>' : '';
+        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name text-white">' + (team.rank ? '<span class="rank-badge">#' + team.rank + '</span>' : '') + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
       function formatKickoffTime(dateString) {
