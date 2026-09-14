@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.1
+Project Context: WDE Scoreboard SAP - V6.2
 </script>
 
 <!DOCTYPE html>
@@ -23,10 +23,10 @@ Project Context: WDE Scoreboard SAP - V6.1
   <!-- Mobile Launcher Icon -->
   <link rel="apple-touch-icon" href="https://poozr.github.io/wde-assets/LogoAppIcon.png">
 
-  <!-- Google Fonts: Graduate -->
+  <!-- Google Fonts: Graduate & Archivo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Graduate&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Graduate&family=Archivo:wght@400;700;900&display=swap" rel="stylesheet">
 
   <!-- Inline Web App Manifest & Service Worker -->
   <script>
@@ -74,15 +74,15 @@ Project Context: WDE Scoreboard SAP - V6.1
       .nav-title { font-size: 2.5rem; line-height: 0.85; margin-top: 6px; }
     }
 
-    .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; display: flex; flex-direction: column; }
+    .game-card { background-color: #0C2340; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 12px; display: flex; flex-direction: column; overflow: hidden; }
     .game-card-auburn { border: 2px solid #E87722; box-shadow: 0 4px 15px rgba(232, 119, 34, 0.2); }
     .game-card-double-ranked { border: 1px solid #D4AF37; }
     .game-card-single-ranked { border-left: 4px solid #E87722; }
     .auburn-badge-strip { background-color: #E87722; color: #0C2340; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
     
     /* Interactive Team Logo */
-    .team-logo { width: 36px; height: 36px; object-fit: contain; transition: transform 0.2s; cursor: pointer; }
-    .team-logo:hover { transform: scale(1.1); }
+    .team-logo { width: 36px; height: 36px; object-fit: contain; transition: transform 0.2s; cursor: pointer; position: relative; z-index: 20; }
+    .team-logo:hover { transform: scale(1.15) rotate(-3deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
     
     .rank-badge { color: #D4AF37; font-size: 0.75rem; margin-right: 6px; font-weight: bold; }
     .team-name { font-weight: 600; font-size: 1rem; }
@@ -94,9 +94,12 @@ Project Context: WDE Scoreboard SAP - V6.1
     .status-scheduled { background-color: transparent; border: 1px solid #6c757d; color: #ced4da; }
     
     /* Stats Ticker */
-    .game-ticker { font-size: 0.7rem; color: #adb5bd; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 12px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; }
-    .game-ticker::-webkit-scrollbar { display: none; }
-    .ticker-content { display: inline-block; padding-bottom: 2px; }
+    .ticker-wrap { width: 100%; overflow: hidden; box-sizing: border-box; background-color: rgba(255,255,255,0.04); border-top: 1px solid rgba(255,255,255,0.08); padding: 5px 0; margin-top: auto; }
+    .ticker { display: inline-block; white-space: nowrap; padding-left: 100%; animation: ticker 25s linear infinite; font-size: 0.65rem; font-weight: 700; color: #adb5bd; letter-spacing: 0.5px; font-family: 'Archivo', sans-serif; }
+    @keyframes ticker {
+      0% { transform: translate3d(0, 0, 0); }
+      100% { transform: translate3d(-100%, 0, 0); }
+    }
 
     .spoiler-container { position: relative; }
     .spoiler-blur { filter: blur(12px); pointer-events: none; user-select: none; opacity: 0.6; }
@@ -106,14 +109,15 @@ Project Context: WDE Scoreboard SAP - V6.1
     .fab-refresh { position: fixed; bottom: 24px; right: 24px; background-color: #E87722; color: white; border: none; border-radius: 50%; width: 56px; height: 56px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 1000; transition: transform 0.2s; }
     .fab-refresh:active { transform: scale(0.9); }
     .spinning { animation: spin 1s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
-    @keyframes spin { 100% { transform: rotate(360deg); } }
     
-    /* Toggle Switch Styling Tweaks */
+    /* Toggle Switch & Offcanvas Tweaks */
     .form-switch .form-check-input { cursor: pointer; border-color: rgba(255,255,255,0.25); }
     .form-switch .form-check-input:checked { background-color: #E87722; border-color: #E87722; }
-    
-    /* Offcanvas dark mode overrides */
     .offcanvas { background-color: #071526 !important; border-left: 1px solid rgba(255,255,255,0.1); }
+
+    /* Team Hub Drawer Nav Styling */
+    .hub-tabs .nav-link { color: rgba(255,255,255,0.6); font-weight: bold; border-radius: 0; border-bottom: 2px solid transparent; padding: 10px 0; font-family: 'Archivo', sans-serif;}
+    .hub-tabs .nav-link.active { color: #ffffff; background: transparent; border-bottom: 2px solid #ffffff; }
   </style>
 </head>
 <body>
@@ -128,7 +132,6 @@ Project Context: WDE Scoreboard SAP - V6.1
         </div>
       </div>
 
-      <!-- Header Controls: Drawer Trigger Only -->
       <div class="d-flex align-items-center gap-3">
         <button class="btn btn-link text-white p-0 text-decoration-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#settingsDrawer" aria-controls="settingsDrawer" aria-label="Open Settings">
           <i class="bi bi-sliders fs-4"></i>
@@ -136,6 +139,41 @@ Project Context: WDE Scoreboard SAP - V6.1
       </div>
     </div>
   </header>
+
+  <!-- Team Hub Drawer (Left) -->
+  <div class="offcanvas offcanvas-start text-white" tabindex="-1" id="hubDrawer" aria-labelledby="hubDrawerLabel" style="max-width: 340px; border-right: none; background-color: #f8f9fa !important;">
+    <div class="offcanvas-header flex-column align-items-start p-0 border-bottom border-secondary" id="hubDrawerHeader" style="background-color: #0C2340; transition: background-color 0.3s; position: sticky; top: 0; z-index: 10;">
+      <div class="d-flex justify-content-between w-100 p-3 pb-0">
+        <h5 class="offcanvas-title fw-bold text-uppercase text-white" id="hubDrawerLabel" style="font-family: 'Graduate', sans-serif; letter-spacing: 1px; text-shadow: 0px 1px 3px rgba(0,0,0,0.6);">TEAM HUB</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+      </div>
+      <ul class="nav nav-pills w-100 hub-tabs d-flex text-center mt-2 px-3" id="hubTabs" role="tablist" style="background-color: rgba(0,0,0,0.15);">
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link active w-100" style="font-size: 0.7rem; letter-spacing: 1px;" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#pane-schedule" type="button" role="tab">SCHEDULE</button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link w-100" style="font-size: 0.7rem; letter-spacing: 1px;" id="injuries-tab" data-bs-toggle="tab" data-bs-target="#pane-injuries" type="button" role="tab">INJURIES</button>
+        </li>
+        <li class="nav-item flex-fill" role="presentation">
+          <button class="nav-link w-100" style="font-size: 0.7rem; letter-spacing: 1px;" id="depth-tab" data-bs-toggle="tab" data-bs-target="#pane-depth" type="button" role="tab">DEPTH</button>
+        </li>
+      </ul>
+    </div>
+    
+    <div class="offcanvas-body p-0" style="color: #0C2340; font-family: 'Archivo', sans-serif;">
+      <div class="tab-content" id="hubTabContent">
+        <div class="tab-pane fade show active" id="pane-schedule" role="tabpanel">
+          <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+        </div>
+        <div class="tab-pane fade" id="pane-injuries" role="tabpanel">
+          <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+        </div>
+        <div class="tab-pane fade" id="pane-depth" role="tabpanel">
+          <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Settings Offcanvas Drawer -->
   <div class="offcanvas offcanvas-end text-white" tabindex="-1" id="settingsDrawer" aria-labelledby="settingsDrawerLabel" style="max-width: 300px;">
@@ -145,7 +183,6 @@ Project Context: WDE Scoreboard SAP - V6.1
     </div>
     <div class="offcanvas-body d-flex flex-column gap-4 mt-2">
       
-      <!-- Top 25 Toggle inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Data Feed</label>
         <div class="form-check form-switch d-flex align-items-center p-0">
@@ -155,17 +192,15 @@ Project Context: WDE Scoreboard SAP - V6.1
         <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Merge the national Top 25 games into your SEC slate.</small>
       </div>
 
-      <!-- Live First Toggle inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-3" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Sorting Preferences</label>
         <div class="form-check form-switch d-flex align-items-center p-0">
           <input class="form-check-input ms-0 mt-0 me-3" type="checkbox" role="switch" id="sortFinishedToggle" style="width: 2.5em; height: 1.25em;">
           <label class="form-check-label text-white" for="sortFinishedToggle" style="cursor: pointer; font-size: 1rem;">Live Games First</label>
         </div>
-        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the feed to keep live action at the top.</small>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">Push final scores to the bottom of the feed.</small>
       </div>
 
-      <!-- Spoiler Shield Expiration Time inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Spoiler Shield Expiration</label>
         <select id="spoilerExpirationSelector" class="form-select bg-dark text-white border-secondary">
@@ -176,10 +211,9 @@ Project Context: WDE Scoreboard SAP - V6.1
           <option value="18">6:00 PM (Next Day)</option>
           <option value="24">Midnight (Full Next Day Protected)</option>
         </select>
-        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">When should the app stop automatically hiding Auburn's final score?</small>
+        <small class="d-block mt-2" style="color: #adb5bd; font-size: 0.75rem;">When should the app hide final scores?</small>
       </div>
 
-      <!-- Week Selector inside Drawer -->
       <div>
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
         <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
@@ -202,7 +236,6 @@ Project Context: WDE Scoreboard SAP - V6.1
         </select>
       </div>
 
-      <!-- Share Native Functionality -->
       <div id="shareAppContainer" style="display: none; margin-top: auto; padding-top: 20px;" class="border-top border-secondary">
         <button id="btnShare" class="btn btn-outline-light w-100 fw-bold d-flex align-items-center justify-content-center gap-2">
           <i class="bi bi-share-fill"></i> Share App
@@ -229,7 +262,7 @@ Project Context: WDE Scoreboard SAP - V6.1
 
     <!-- Version Footer & Attribution -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.1
+      WDE Scoreboard App &bull; V6.2
       <div class="mt-2 fw-bold" style="font-size: 0.55rem; opacity: 0.6; letter-spacing: 1px;">Data provided by ESPN API</div>
     </div>
   </main>
@@ -256,7 +289,8 @@ Project Context: WDE Scoreboard SAP - V6.1
         includeTop25: localStorage.getItem('wde_include_top25') === 'true',
         spoilerExpirationHour: localStorage.getItem('wde_spoiler_hour') !== null ? parseInt(localStorage.getItem('wde_spoiler_hour')) : 3,
         isFetching: false,
-        cachedData: null
+        cachedData: null,
+        currentHubTeamId: null 
       };
 
       var dom = {
@@ -316,7 +350,6 @@ Project Context: WDE Scoreboard SAP - V6.1
           fetchScoreboardData(function () { icon.classList.remove('spinning'); });
         });
 
-        // Focus State Polling Logic
         document.addEventListener('visibilitychange', function() {
           if (document.hidden) {
             if (state.pollTimer) clearInterval(state.pollTimer);
@@ -326,7 +359,6 @@ Project Context: WDE Scoreboard SAP - V6.1
           }
         });
 
-        // Native Web Share inside Drawer
         if (navigator.share) {
           dom.shareAppContainer.style.display = 'block';
           dom.btnShare.addEventListener('click', function () {
@@ -337,6 +369,28 @@ Project Context: WDE Scoreboard SAP - V6.1
             }).catch(function(err) { console.error('Share failed:', err); });
           });
         }
+
+        // Team Hub Drawer Event Listeners[cite: 1]
+        document.addEventListener('click', function(e) {
+          var logoTarget = e.target.closest('.logo-clickable');
+          if (logoTarget) {
+            e.preventDefault();
+            e.stopPropagation(); 
+            var teamId = logoTarget.getAttribute('data-team-id');
+            var teamName = logoTarget.getAttribute('data-team-name');
+            var teamColor = logoTarget.getAttribute('data-team-color');
+            openTeamHubDrawer(teamId, teamName, teamColor);
+          }
+        });
+
+        var hubTabs = document.querySelectorAll('#hubTabs button[data-bs-toggle="tab"]');
+        hubTabs.forEach(function(tab) {
+          tab.addEventListener('shown.bs.tab', function (event) {
+            var target = event.target.getAttribute('data-bs-target');
+            if (target === '#pane-injuries') fetchTeamInjuries(state.currentHubTeamId);
+            if (target === '#pane-depth') fetchTeamDepthChart(state.currentHubTeamId);
+          });
+        });
       }
 
       function closeDrawer() {
@@ -451,7 +505,7 @@ Project Context: WDE Scoreboard SAP - V6.1
           tvStation: tv,
           homeTeam: extractTeamDetails(home),
           awayTeam: extractTeamDetails(away),
-          leadersText: extractLeaders(comp)
+          gameLeaders: comp.leaders || [] // Added for Ticker[cite: 1]
         };
       }
 
@@ -464,24 +518,10 @@ Project Context: WDE Scoreboard SAP - V6.1
           logo: team.logo || '',
           score: competitor.score || '0',
           rank: rank,
-          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : ''
+          record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : '',
+          color: team.color || '0C2340', // Added for Hub Header[cite: 1]
+          seasonLeaders: competitor.leaders || [] // Added for Pre-Game Ticker[cite: 1]
         };
-      }
-
-      function extractLeaders(comp) {
-        if (!comp.leaders || !comp.leaders.length) return '';
-        var leaderItems = [];
-        comp.leaders.forEach(function(cat) {
-          if (cat.leaders && cat.leaders.length > 0) {
-            var leader = cat.leaders[0];
-            var name = leader.athlete ? leader.athlete.shortName : '';
-            var val = leader.displayValue;
-            if (name && val) {
-              leaderItems.push('<span class="fw-bold text-white">' + cat.shortDisplayName + ':</span> ' + name + ' ' + val);
-            }
-          }
-        });
-        return leaderItems.join(' &nbsp;&bull;&nbsp; ');
       }
 
       function updateHeaderMetadata() {
@@ -514,16 +554,15 @@ Project Context: WDE Scoreboard SAP - V6.1
         var isRecentFinal = game.state === 'post' && isSpoilerWindow && state.selectedWeek === 'current';
         
         var needsShield = (isLive || isRecentFinal) && !state.auburnScoreUnlocked;
-        
-        var tickerHtml = game.leadersText ? '<div class="game-ticker"><div class="ticker-content">' + game.leadersText + '</div></div>' : '';
 
         dom.auburnSection.innerHTML = 
           '<div class="game-card game-card-auburn">' +
             '<div class="auburn-badge-strip">Auburn Matchup</div>' +
             '<div class="p-3 flex-grow-1 ' + (needsShield ? 'spoiler-container' : '') + '">' +
               (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-warning"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealAuburn" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
-              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + tickerHtml + '</div>' +
+              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + '</div>' +
             '</div>' +
+            buildTickerHtml(game) +
           '</div>';
 
         if (needsShield) {
@@ -548,16 +587,14 @@ Project Context: WDE Scoreboard SAP - V6.1
           var singleRanked = (game.homeTeam.rank || game.awayTeam.rank) && !bothRanked;
           
           var highlightClass = '';
-          if (bothRanked) {
-            highlightClass = 'game-card-double-ranked';
-          } else if (singleRanked) {
-            highlightClass = 'game-card-single-ranked';
-          }
+          if (bothRanked) highlightClass = 'game-card-double-ranked';
+          else if (singleRanked) highlightClass = 'game-card-single-ranked';
           
-          var tickerHtml = game.leadersText ? '<div class="game-ticker"><div class="ticker-content">' + game.leadersText + '</div></div>' : '';
-          
-          return '<div class="game-card p-3 ' + highlightClass + '">' + buildGameHeaderHtml(game, bothRanked) + buildScoreRowHtml(game) + tickerHtml + '</div>';
-        }).join('') : '<div class="text-center py-4 text-muted">No conference games.</div>';
+          return '<div class="game-card ' + highlightClass + '">' + 
+                 '<div class="p-3 flex-grow-1">' + buildGameHeaderHtml(game, bothRanked) + buildScoreRowHtml(game) + '</div>' + 
+                 buildTickerHtml(game) + 
+                 '</div>';
+        }).join('') : '<div class="text-center py-4 text-muted">No games scheduled.</div>';
       }
 
       function buildGameHeaderHtml(game, doubleRanked, isAuburnGame) {
@@ -575,9 +612,263 @@ Project Context: WDE Scoreboard SAP - V6.1
         return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, game.state === 'pre') + buildTeamRowHtml(game.homeTeam, game.state === 'pre') + '</div>';
       }
 
+      // Add logo-clickable class and data tags[cite: 1]
       function buildTeamRowHtml(team, isScheduled) {
-        var logoHtml = team.logo ? '<a href="https://www.espn.com/college-football/team/_/id/' + team.id + '" target="_blank" rel="noopener noreferrer" title="View Team Hub"><img src="' + team.logo + '" class="team-logo"></a>' : '';
+        var logoHtml = team.logo ? '<img src="' + team.logo + '" class="team-logo logo-clickable" data-team-id="' + team.id + '" data-team-name="' + team.name + '" data-team-color="' + team.color + '">' : '';
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name text-white">' + (team.rank ? '<span class="rank-badge">#' + team.rank + '</span>' : '') + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
+      }
+
+      // Ticker HTML Builder[cite: 1]
+      function buildTickerHtml(game) {
+        var fullText = '';
+        if (game.state === 'pre') {
+          var awayPass = extractSeasonLeader(game.awayTeam.seasonLeaders, 'passing');
+          var homePass = extractSeasonLeader(game.homeTeam.seasonLeaders, 'passing');
+          var awayRush = extractSeasonLeader(game.awayTeam.seasonLeaders, 'rushing');
+          var homeRush = extractSeasonLeader(game.homeTeam.seasonLeaders, 'rushing');
+          
+          if (!awayPass && !homePass && !awayRush && !homeRush) return ''; 
+
+          var parts = [];
+          if (awayPass) parts.push('AWAY PASS: ' + awayPass);
+          if (homePass) parts.push('HOME PASS: ' + homePass);
+          if (awayRush) parts.push('AWAY RUSH: ' + awayRush);
+          if (homeRush) parts.push('HOME RUSH: ' + homeRush);
+          fullText = 'SEASON LEADERS &nbsp;&nbsp;&bull;&nbsp;&nbsp; ' + parts.join(' &nbsp;&nbsp;&bull;&nbsp;&nbsp; ');
+        } else {
+          var pass = extractCategoryStringTicker(game.gameLeaders, 'passing');
+          var rush = extractCategoryStringTicker(game.gameLeaders, 'rushing');
+          var rec = extractCategoryStringTicker(game.gameLeaders, 'receiving');
+          if (!pass && !rush && !rec) return '';
+          
+          var parts = [];
+          if (pass) parts.push('PASS: ' + pass);
+          if (rush) parts.push('RUSH: ' + rush);
+          if (rec) parts.push('REC: ' + rec);
+          fullText = 'TOP OVERALL PERFORMERS &nbsp;&nbsp;&bull;&nbsp;&nbsp; ' + parts.join(' &nbsp;&nbsp;&bull;&nbsp;&nbsp; ');
+        }
+        return '<div class="ticker-wrap"><div class="ticker">' + fullText + '</div></div>';
+      }
+
+      function extractSeasonLeader(leadersArray, categoryName) {
+        if (!leadersArray || !leadersArray.length) return null;
+        var category = leadersArray.find(function(cat) { return cat.name && cat.name.toLowerCase().includes(categoryName.toLowerCase()); });
+        if (category && category.leaders && category.leaders.length > 0) {
+          var athlete = category.leaders[0].athlete || {};
+          var athleteName = athlete.shortName || athlete.lastName || 'Unknown';
+          var statValue = category.leaders[0].displayValue || '0';
+          return athleteName + ' (' + statValue + ')';
+        }
+        return null;
+      }
+
+      function extractCategoryStringTicker(leadersArray, categoryName) {
+        if (!leadersArray || !leadersArray.length) return null;
+        var category = leadersArray.find(function(cat) { return cat.name && cat.name.toLowerCase().includes(categoryName.toLowerCase()); });
+        if (category && category.leaders && category.leaders.length > 0) {
+          var athlete = category.leaders[0].athlete || {};
+          var athleteName = athlete.shortName || athlete.lastName || 'Unknown';
+          var statValue = category.leaders[0].displayValue || '0';
+          return athleteName + ' (' + statValue + ')';
+        }
+        return null;
+      }
+
+      // Hub Drawer Logic[cite: 1]
+      function openTeamHubDrawer(teamId, teamName, teamColor) {
+        state.currentHubTeamId = teamId;
+        var header = document.getElementById('hubDrawerHeader');
+        var label = document.getElementById('hubDrawerLabel');
+        header.style.backgroundColor = teamColor && teamColor !== '000000' ? '#' + teamColor : '#0C2340';
+        label.textContent = teamName.toUpperCase() + ' HUB';
+        
+        var schedTab = new bootstrap.Tab(document.getElementById('schedule-tab'));
+        schedTab.show();
+        
+        document.getElementById('pane-schedule').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+        document.getElementById('pane-injuries').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+        document.getElementById('pane-depth').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+
+        var drawerEl = document.getElementById('hubDrawer');
+        var bsOffcanvas = bootstrap.Offcanvas.getInstance(drawerEl);
+        if (!bsOffcanvas) bsOffcanvas = new bootstrap.Offcanvas(drawerEl);
+        bsOffcanvas.show();
+        
+        fetchTeamSchedule(teamId);
+      }
+
+      function fetchTeamSchedule(teamId) {
+        var body = document.getElementById('pane-schedule');
+        fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/' + teamId + '/schedule')
+          .then(res => res.json())
+          .then(data => {
+            var events = data.events || [];
+            if (!events.length) { body.innerHTML = '<div class="text-center py-4 text-muted">Schedule not available.</div>'; return; }
+            
+            var html = '<ul class="list-group list-group-flush">';
+            events.forEach(function(ev) {
+              var comp = (ev.competitions && ev.competitions[0]) ? ev.competitions[0] : null;
+              if (!comp) return;
+              var competitors = comp.competitors || [];
+              var myTeam = competitors.find(c => c.id === teamId) || {};
+              var oppTeam = competitors.find(c => c.id !== teamId) || {};
+              var oppData = oppTeam.team || {};
+              var oppName = oppData.shortDisplayName || oppData.displayName || 'TBA';
+              var oppLogo = oppData.logos && oppData.logos.length ? oppData.logos[0].href : '';
+              var isHome = myTeam.homeAway === 'home';
+              var vsAt = isHome ? 'vs' : '@';
+              var d = new Date(ev.date);
+              var dateStr = d.toLocaleDateString([], {month: 'short', day: 'numeric'});
+              var gameState = (comp.status && comp.status.type) ? comp.status.type.state : 'pre';
+              
+              var liveMatch = state.cachedData && state.cachedData.events ? state.cachedData.events.find(e => e.id === ev.id) : null;
+              var liveMyTeam = null;
+              var liveOppTeam = null;
+              if (liveMatch && liveMatch.competitions && liveMatch.competitions[0]) {
+                var liveCompetitors = liveMatch.competitions[0].competitors || [];
+                liveMyTeam = liveCompetitors.find(c => c.id === teamId);
+                liveOppTeam = liveCompetitors.find(c => c.id !== teamId);
+                gameState = (liveMatch.status && liveMatch.status.type) ? liveMatch.status.type.state : gameState;
+              }
+
+              var getScore = function(teamObj, liveTeamObj) {
+                if (liveTeamObj && liveTeamObj.score != null) {
+                  if (typeof liveTeamObj.score === 'object') return parseInt(liveTeamObj.score.value || 0);
+                  return parseInt(liveTeamObj.score || 0);
+                }
+                if (!teamObj || teamObj.score == null) return 0;
+                if (typeof teamObj.score === 'object') return parseInt(teamObj.score.value || 0);
+                return parseInt(teamObj.score || 0);
+              };
+              
+              var myScore = getScore(myTeam, liveMyTeam);
+              var oppScore = getScore(oppTeam, liveOppTeam);
+              var statusStr = '';
+              if (gameState === 'post') {
+                var wl = myScore > oppScore ? '<span class="text-success fw-bold">W</span>' : (myScore < oppScore ? '<span class="text-danger fw-bold">L</span>' : '<span class="text-warning fw-bold">T</span>');
+                statusStr = wl + ' ' + myScore + '-' + oppScore;
+              } else if (gameState === 'in') {
+                statusStr = '<span class="text-danger fw-bold">LIVE</span> ' + myScore + '-' + oppScore;
+              } else {
+                statusStr = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+              }
+              
+              html += '<li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: rgba(12,35,64,0.1); padding: 12px 16px;">' +
+                      '<div class="d-flex align-items-center gap-2">' +
+                        '<div style="width: 16px; font-size: 0.65rem; color: #6c757d; text-align: center; font-weight: bold;">' + vsAt + '</div>' +
+                        (oppLogo ? '<img src="' + oppLogo + '" style="width: 24px; height: 24px; object-fit: contain;">' : '') +
+                        '<div class="fw-bold" style="font-size: 0.85rem; color: #0C2340;">' + oppName + '</div>' +
+                      '</div>' +
+                      '<div class="text-end">' +
+                        '<div style="font-size: 0.85rem; color: #0C2340; font-weight: bold;">' + statusStr + '</div>' +
+                        '<div style="font-size: 0.65rem; color: #6c757d; text-transform: uppercase;">' + dateStr + '</div>' +
+                      '</div>' +
+                      '</li>';
+            });
+            html += '</ul>';
+            body.innerHTML = html;
+          }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load schedule.</div>'; });
+      }
+
+      function fetchTeamInjuries(teamId) {
+        var body = document.getElementById('pane-injuries');
+        if (body.innerHTML.includes('spinner-border') === false) return; 
+        fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/' + teamId + '/roster')
+          .then(res => res.json())
+          .then(data => {
+            var athletes = data.athletes || [];
+            if (!athletes.length) { body.innerHTML = '<div class="text-center py-4 text-muted">No roster data found.</div>'; return; }
+            var injuredPlayers = [];
+            athletes.forEach(function(group) {
+              if(group.items) {
+                group.items.forEach(function(player) {
+                  if (player.injuries && player.injuries.length > 0) injuredPlayers.push(player);
+                  else if (player.status && player.status.type !== 'active') injuredPlayers.push(player);
+                });
+              }
+            });
+            if (!injuredPlayers.length) {
+              body.innerHTML = '<div class="text-center py-5"><i class="bi bi-check-circle fs-1 text-success mb-2"></i><div class="fw-bold text-muted">No injuries reported.</div></div>';
+              return;
+            }
+            var html = '<ul class="list-group list-group-flush">';
+            injuredPlayers.forEach(function(player) {
+              var name = player.displayName || 'Unknown';
+              var pos = player.position && player.position.abbreviation ? player.position.abbreviation : '';
+              var status = "Inactive";
+              if (player.injuries && player.injuries.length > 0) {
+                status = player.injuries[0].status || player.injuries[0].type || "Injured";
+              } else if (player.status) {
+                status = player.status.name || "Inactive";
+              }
+              var badgeClass = status.toLowerCase().includes('out') ? 'bg-danger' : (status.toLowerCase().includes('questionable') ? 'bg-warning text-dark' : 'bg-secondary');
+              html += '<li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: rgba(12,35,64,0.1); padding: 12px 16px;">' +
+                      '<div><span class="fw-bold" style="color: #0C2340; font-size: 0.85rem;">' + name + '</span> <span style="font-size: 0.7rem; color: #6c757d;">' + pos + '</span></div>' +
+                      '<span class="badge ' + badgeClass + '" style="font-size: 0.65rem;">' + status.toUpperCase() + '</span>' +
+                      '</li>';
+            });
+            html += '</ul>';
+            body.innerHTML = html;
+          }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load injuries.</div>'; });
+      }
+
+      function fetchTeamDepthChart(teamId) {
+        var body = document.getElementById('pane-depth');
+        if (body.innerHTML.includes('spinner-border') === false) return; 
+
+        fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/' + teamId + '/depthcharts')
+          .then(res => res.json())
+          .then(data => {
+            var items = data.depthchart || (Array.isArray(data) ? data : (data.items || []));
+            
+            if (!items.length) { 
+              body.innerHTML = '<div class="text-center py-4 text-muted">Depth chart not available.</div>'; 
+              return; 
+            }
+            
+            var html = '<div class="p-3">';
+            items.forEach(function(unit) {
+              if (unit.name === 'Special Teams') return; 
+              html += '<div class="fw-bold mb-2 text-uppercase" style="color: #C8102E; font-size: 0.75rem; border-bottom: 1px solid rgba(12,35,64,0.1); padding-bottom: 4px;">' + unit.name + '</div>';
+              
+              if (unit.positions) {
+                var positionsArray = Array.isArray(unit.positions) ? unit.positions : Object.keys(unit.positions).map(function(key) { return unit.positions[key]; });
+                
+                positionsArray.forEach(function(pos) {
+                  var posName = pos.position && pos.position.abbreviation ? pos.position.abbreviation : 'POS';
+                  
+                  var playersHtml = '';
+                  if (pos.athletes && pos.athletes.length > 0) {
+                    var starterData = pos.athletes[0].athlete || pos.athletes[0];
+                    var starter = starterData.displayName || starterData.shortName || 'TBD';
+                    playersHtml = '<strong>' + starter + '</strong>';
+                    
+                    var backups = [];
+                    for (var i = 1; i < pos.athletes.length; i++) {
+                      var backupData = pos.athletes[i].athlete || pos.athletes[i];
+                      backups.push(backupData.displayName || backupData.shortName);
+                    }
+                    if (backups.length > 0) {
+                      playersHtml += ' <span style="opacity: 0.6; font-size: 0.7rem; margin-left: 6px;">' + backups.join(', ') + '</span>';
+                    }
+                  } else {
+                    playersHtml = 'TBD';
+                  }
+                  
+                  html += '<div class="d-flex align-items-center mb-2">' +
+                          '<div class="fw-bold text-center" style="width: 35px; font-size: 0.75rem; color: #0C2340; background-color: rgba(12,35,64,0.05); padding: 2px; border-radius: 4px; margin-right: 10px;">' + posName + '</div>' +
+                          '<div style="font-size: 0.8rem; color: #0C2340; line-height: 1.2;">' + playersHtml + '</div>' +
+                          '</div>';
+                });
+              }
+              html += '<div class="mb-3"></div>';
+            });
+            html += '</div>';
+            body.innerHTML = html;
+          }).catch(err => { 
+            body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load depth chart.</div>'; 
+            console.error(err);
+          });
       }
 
       function formatKickoffTime(dateString) {
