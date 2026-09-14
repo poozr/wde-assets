@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.6
+Project Context: WDE Scoreboard SAP - V6.7
 </script>
 
 <!DOCTYPE html>
@@ -221,11 +221,21 @@ Project Context: WDE Scoreboard SAP - V6.6
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
         <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
           <option value="current" selected>Current Week</option>
-          <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
-          <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
-          <option value="7">Week 7</option><option value="8">Week 8</option><option value="9">Week 9</option>
-          <option value="10">Week 10</option><option value="11">Week 11</option><option value="12">Week 12</option>
-          <option value="13">Week 13</option><option value="14">Week 14</option><option value="15">Conference Champ</option>
+          <option value="1">Week 1 (Sep 5)</option>
+          <option value="2">Week 2 (Sep 12)</option>
+          <option value="3">Week 3 (Sep 19)</option>
+          <option value="4">Week 4 (Sep 26)</option>
+          <option value="5">Week 5 (Oct 3)</option>
+          <option value="6">Week 6 (Oct 10)</option>
+          <option value="7">Week 7 (Oct 17)</option>
+          <option value="8">Week 8 (Oct 24)</option>
+          <option value="9">Week 9 (Oct 31)</option>
+          <option value="10">Week 10 (Nov 7)</option>
+          <option value="11">Week 11 (Nov 14)</option>
+          <option value="12">Week 12 (Nov 21)</option>
+          <option value="13">Week 13 (Nov 28)</option>
+          <option value="14">Week 14 (Dec 5)</option>
+          <option value="15">Conference Champ</option>
         </select>
       </div>
 
@@ -257,9 +267,9 @@ Project Context: WDE Scoreboard SAP - V6.6
       </div>
     </section>
 
-    <!-- Version Footer & Attribution -->
+    <!-- Version Footer -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.6
+      WDE Scoreboard App &bull; V6.7
     </div>
   </main>
 
@@ -281,6 +291,7 @@ Project Context: WDE Scoreboard SAP - V6.6
         pollingInterval: 45000,
         pollTimer: null,
         selectedWeek: 'current',
+        displayWeek: '',
         auburnScoreUnlocked: sessionStorage.getItem('wde_score_unlocked') === 'true',
         liveFirst: localStorage.getItem('wde_live_first') === 'true',
         includeTop25: localStorage.getItem('wde_include_top25') === 'true',
@@ -444,6 +455,13 @@ Project Context: WDE Scoreboard SAP - V6.6
 
         Promise.all(fetchPromises)
           .then(results => {
+            // Intercept actual week from ESPN API Payload
+            if (results[0] && results[0].week) {
+               state.displayWeek = results[0].week.number;
+            } else {
+               state.displayWeek = state.selectedWeek !== 'current' ? state.selectedWeek : '';
+            }
+
             var allEvents = [];
             var seenIds = new Set();
             
@@ -558,7 +576,13 @@ Project Context: WDE Scoreboard SAP - V6.6
         var now = new Date();
         dom.lastUpdatedLabel.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         var today = now.getDay();
-        dom.statusModeLabel.textContent = today === 0 ? 'Sunday Recap' : (today === 6 ? 'Saturday Game Day Live' : 'Upcoming Weekend Slate');
+        
+        var weekText = '';
+        if (state.displayWeek) {
+          weekText = state.displayWeek == 15 ? ' (Conf Champ)' : ' (Week ' + state.displayWeek + ')';
+        }
+        
+        dom.statusModeLabel.textContent = (today === 0 ? 'Sunday Recap' : (today === 6 ? 'Saturday Game Day Live' : 'Upcoming Weekend Slate')) + weekText;
         
         if (dom.slateTitleLabel) {
            dom.slateTitleLabel.textContent = state.includeTop25 ? 'SEC & Top 25 Slate' : 'SEC Slate';
