@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.4
+Project Context: WDE Scoreboard SAP - V6.5
 </script>
 
 <!DOCTYPE html>
@@ -166,7 +166,7 @@ Project Context: WDE Scoreboard SAP - V6.4
           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
         </div>
         <div class="tab-pane fade" id="pane-injuries" role="tabpanel">
-          <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+          <!-- Dynamically populated with ESPN out-link in openTeamHubDrawer -->
         </div>
         <div class="tab-pane fade" id="pane-depth" role="tabpanel">
           <!-- Dynamically populated with ESPN out-link in openTeamHubDrawer -->
@@ -252,7 +252,7 @@ Project Context: WDE Scoreboard SAP - V6.4
 
     <!-- Version Footer & Attribution -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.4
+      WDE Scoreboard App &bull; V6.5
       <div class="mt-2 fw-bold" style="font-size: 0.55rem; opacity: 0.6; letter-spacing: 1px;">Data provided by ESPN API</div>
     </div>
   </main>
@@ -370,14 +370,6 @@ Project Context: WDE Scoreboard SAP - V6.4
             var teamColor = logoTarget.getAttribute('data-team-color');
             openTeamHubDrawer(teamId, teamName, teamColor);
           }
-        });
-
-        var hubTabs = document.querySelectorAll('#hubTabs button[data-bs-toggle="tab"]');
-        hubTabs.forEach(function(tab) {
-          tab.addEventListener('shown.bs.tab', function (event) {
-            var target = event.target.getAttribute('data-bs-target');
-            if (target === '#pane-injuries') fetchTeamInjuries(state.currentHubTeamId);
-          });
         });
       }
 
@@ -671,9 +663,16 @@ Project Context: WDE Scoreboard SAP - V6.4
         schedTab.show();
         
         document.getElementById('pane-schedule').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
-        document.getElementById('pane-injuries').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
         
-        // Dynamically inject the web link for the Depth Chart
+        // Dynamically inject the web links for Injuries and Depth Chart
+        var injuriesUrl = 'https://www.espn.com/college-football/team/injuries/_/id/' + teamId;
+        document.getElementById('pane-injuries').innerHTML = 
+          '<div class="text-center py-5 px-3">' +
+            '<i class="bi bi-bandaid-fill mb-3" style="font-size: 2.5rem; color: #0C2340; opacity: 0.2;"></i>' +
+            '<div class="fw-bold mb-3" style="color: #0C2340;">Injury reports are only available directly on ESPN.</div>' +
+            '<a href="' + injuriesUrl + '" target="_blank" rel="noopener noreferrer" class="btn fw-bold text-white w-100" style="background-color: #E87722; letter-spacing: 1px;">VIEW INJURY REPORT</a>' +
+          '</div>';
+
         var depthUrl = 'https://www.espn.com/college-football/team/depth/_/id/' + teamId;
         document.getElementById('pane-depth').innerHTML = 
           '<div class="text-center py-5 px-3">' +
@@ -761,48 +760,6 @@ Project Context: WDE Scoreboard SAP - V6.4
             html += '</ul>';
             body.innerHTML = html;
           }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load schedule.</div>'; });
-      }
-
-      function fetchTeamInjuries(teamId) {
-        var body = document.getElementById('pane-injuries');
-        if (body.innerHTML.includes('spinner-border') === false) return; 
-        fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/' + teamId + '/roster')
-          .then(res => res.json())
-          .then(data => {
-            var athletes = data.athletes || [];
-            if (!athletes.length) { body.innerHTML = '<div class="text-center py-4 text-muted">No roster data found.</div>'; return; }
-            var injuredPlayers = [];
-            athletes.forEach(function(group) {
-              if(group.items) {
-                group.items.forEach(function(player) {
-                  if (player.injuries && player.injuries.length > 0) injuredPlayers.push(player);
-                  else if (player.status && player.status.type !== 'active') injuredPlayers.push(player);
-                });
-              }
-            });
-            if (!injuredPlayers.length) {
-              body.innerHTML = '<div class="text-center py-5"><i class="bi bi-check-circle fs-1 text-success mb-2"></i><div class="fw-bold text-muted">No injuries reported.</div></div>';
-              return;
-            }
-            var html = '<ul class="list-group list-group-flush">';
-            injuredPlayers.forEach(function(player) {
-              var name = player.displayName || 'Unknown';
-              var pos = player.position && player.position.abbreviation ? player.position.abbreviation : '';
-              var status = "Inactive";
-              if (player.injuries && player.injuries.length > 0) {
-                status = player.injuries[0].status || player.injuries[0].type || "Injured";
-              } else if (player.status) {
-                status = player.status.name || "Inactive";
-              }
-              var badgeClass = status.toLowerCase().includes('out') ? 'bg-danger' : (status.toLowerCase().includes('questionable') ? 'bg-warning text-dark' : 'bg-secondary');
-              html += '<li class="list-group-item d-flex justify-content-between align-items-center" style="background-color: transparent; border-color: rgba(12,35,64,0.1); padding: 12px 16px;">' +
-                      '<div><span class="fw-bold" style="color: #0C2340; font-size: 0.85rem;">' + name + '</span> <span style="font-size: 0.7rem; color: #6c757d;">' + pos + '</span></div>' +
-                      '<span class="badge ' + badgeClass + '" style="font-size: 0.65rem;">' + status.toUpperCase() + '</span>' +
-                      '</li>';
-            });
-            html += '</ul>';
-            body.innerHTML = html;
-          }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load injuries.</div>'; });
       }
 
       function formatKickoffTime(dateString) {
