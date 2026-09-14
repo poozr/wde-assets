@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.5
+Project Context: WDE Scoreboard SAP - V6.6
 </script>
 
 <!DOCTYPE html>
@@ -80,10 +80,13 @@ Project Context: WDE Scoreboard SAP - V6.5
     .game-card-single-ranked { border-left: 4px solid #E87722; }
     .auburn-badge-strip { background-color: #E87722; color: #0C2340; font-weight: 900; text-align: center; font-size: 0.75rem; text-transform: uppercase; padding: 4px; border-top-left-radius: 6px; border-top-right-radius: 6px; letter-spacing: 1px; }
     
-    /* Interactive Team Logo */
+    /* Interactive Team Logo & Accordion elements */
     .team-logo { width: 36px; height: 36px; object-fit: contain; transition: transform 0.2s; cursor: pointer; position: relative; z-index: 20; }
     .team-logo:hover { transform: scale(1.15) rotate(-3deg); filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
-    
+    .card-clickable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+    .stat-line { font-size: 0.72rem; line-height: 1.35; color: #adb5bd; margin-bottom: 8px; }
+    .stat-secondary { opacity: 0.65; font-weight: normal; }
+
     .rank-badge { color: #D4AF37; font-size: 0.75rem; margin-right: 6px; font-weight: bold; }
     .team-name { font-weight: 600; font-size: 1rem; }
     .team-record { font-size: 0.7rem; color: #adb5bd; }
@@ -166,10 +169,10 @@ Project Context: WDE Scoreboard SAP - V6.5
           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
         </div>
         <div class="tab-pane fade" id="pane-injuries" role="tabpanel">
-          <!-- Dynamically populated with ESPN out-link in openTeamHubDrawer -->
+          <!-- Dynamically populated -->
         </div>
         <div class="tab-pane fade" id="pane-depth" role="tabpanel">
-          <!-- Dynamically populated with ESPN out-link in openTeamHubDrawer -->
+          <!-- Dynamically populated -->
         </div>
       </div>
     </div>
@@ -232,6 +235,10 @@ Project Context: WDE Scoreboard SAP - V6.5
         </button>
       </div>
 
+      <div class="text-center mt-3 pt-3 border-top border-secondary">
+        <small style="color: rgba(255,255,255,0.4); font-size: 0.6rem; letter-spacing: 0.5px;">Factual scoreboard data provided courtesy of ESPN.</small>
+      </div>
+
     </div>
   </div>
 
@@ -252,8 +259,7 @@ Project Context: WDE Scoreboard SAP - V6.5
 
     <!-- Version Footer & Attribution -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.5
-      <div class="mt-2 fw-bold" style="font-size: 0.55rem; opacity: 0.6; letter-spacing: 1px;">Data provided by ESPN API</div>
+      WDE Scoreboard App &bull; V6.6
     </div>
   </main>
 
@@ -271,6 +277,7 @@ Project Context: WDE Scoreboard SAP - V6.5
         auburnId: '2',
         secGroupId: '8',
         baseUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/scoreboard',
+        summaryBaseUrl: 'https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=',
         pollingInterval: 45000,
         pollTimer: null,
         selectedWeek: 'current',
@@ -280,7 +287,8 @@ Project Context: WDE Scoreboard SAP - V6.5
         spoilerExpirationHour: localStorage.getItem('wde_spoiler_hour') !== null ? parseInt(localStorage.getItem('wde_spoiler_hour')) : 3,
         isFetching: false,
         cachedData: null,
-        currentHubTeamId: null 
+        currentHubTeamId: null,
+        openAccordions: []
       };
 
       var dom = {
@@ -311,6 +319,7 @@ Project Context: WDE Scoreboard SAP - V6.5
       function setupEventListeners() {
         dom.weekSelector.addEventListener('change', function (e) {
           state.selectedWeek = e.target.value;
+          state.openAccordions = [];
           fetchScoreboardData();
           closeDrawer();
         });
@@ -369,6 +378,40 @@ Project Context: WDE Scoreboard SAP - V6.5
             var teamName = logoTarget.getAttribute('data-team-name');
             var teamColor = logoTarget.getAttribute('data-team-color');
             openTeamHubDrawer(teamId, teamName, teamColor);
+            return;
+          }
+
+          var cardTarget = e.target.closest('.card-clickable');
+          if (cardTarget) {
+            var targetId = cardTarget.getAttribute('data-target-id');
+            var targetEl = document.getElementById(targetId);
+            if (targetEl) {
+              var bsCollapse = bootstrap.Collapse.getInstance(targetEl);
+              if (!bsCollapse) bsCollapse = new bootstrap.Collapse(targetEl, { toggle: false });
+              bsCollapse.toggle();
+            }
+          }
+        });
+
+        document.addEventListener('show.bs.collapse', function (e) {
+          if (e.target.id && e.target.id.startsWith('stats-')) {
+            var gameId = e.target.id.replace('stats-', '');
+            var openPanels = document.querySelectorAll('.collapse.show');
+            openPanels.forEach(function(panel) {
+              if (panel.id !== e.target.id && panel.id.startsWith('stats-')) {
+                var bsCollapse = bootstrap.Collapse.getInstance(panel);
+                if (bsCollapse) bsCollapse.hide();
+              }
+            });
+            state.openAccordions = [gameId];
+            fetchGameSummary(gameId);
+          }
+        });
+
+        document.addEventListener('hide.bs.collapse', function (e) {
+          if (e.target.id && e.target.id.startsWith('stats-')) {
+            var gameId = e.target.id.replace('stats-', '');
+            state.openAccordions = state.openAccordions.filter(id => id !== gameId);
           }
         });
       }
@@ -469,6 +512,10 @@ Project Context: WDE Scoreboard SAP - V6.5
 
         renderAuburnGame(auburnGame);
         renderOtherGames(otherGames);
+
+        state.openAccordions.forEach(function(gameId) {
+          fetchGameSummary(gameId);
+        });
       }
 
       function normalizeGameData(event) {
@@ -476,13 +523,16 @@ Project Context: WDE Scoreboard SAP - V6.5
         var home = (comp.competitors || []).find(c => c.homeAway === 'home') || {};
         var away = (comp.competitors || []).find(c => c.homeAway === 'away') || {};
         var tv = (comp.broadcasts && comp.broadcasts[0] && comp.broadcasts[0].names) ? comp.broadcasts[0].names[0] : '';
-        
+        var oddsObj = comp.odds && comp.odds[0] ? comp.odds[0] : null;
+
         return {
           id: event.id,
           date: event.date, 
           state: (event.status && event.status.type) ? event.status.type.state : 'pre',
           statusDetail: (event.status && event.status.type) ? event.status.type.shortDetail : '',
           tvStation: tv,
+          oddsDetails: oddsObj && oddsObj.details ? oddsObj.details : 'TBD',
+          oddsOU: oddsObj && oddsObj.overUnder ? oddsObj.overUnder : 'TBD',
           homeTeam: extractTeamDetails(home),
           awayTeam: extractTeamDetails(away),
           gameLeaders: comp.leaders || []
@@ -538,9 +588,15 @@ Project Context: WDE Scoreboard SAP - V6.5
         dom.auburnSection.innerHTML = 
           '<div class="game-card game-card-auburn">' +
             '<div class="auburn-badge-strip">Auburn Matchup</div>' +
-            '<div class="p-3 flex-grow-1 ' + (needsShield ? 'spoiler-container' : '') + '">' +
+            '<div class="p-0 position-relative flex-grow-1 ' + (needsShield ? 'spoiler-container' : '') + '">' +
               (needsShield ? '<div class="spoiler-overlay"><i class="bi bi-shield-lock-fill fs-2 mb-2 text-warning"></i><div class="fw-bold text-white mb-1">Spoiler Shield Active</div><button id="btnRevealAuburn" class="btn-reveal mt-3"><i class="bi bi-eye-fill me-1"></i> Reveal Final Score</button></div>' : '') +
-              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + buildGameHeaderHtml(game, false, true) + buildScoreRowHtml(game) + '</div>' +
+              '<div class="' + (needsShield ? 'spoiler-blur' : '') + '">' + 
+                '<div class="p-3 card-clickable" data-target-id="stats-' + game.id + '">' +
+                  buildGameHeaderHtml(game, false, true) + 
+                  (game.state === 'pre' ? buildPreGameRowHtml(game) : buildLivePostGameRowHtml(game)) +
+                  buildStatCollapseHtml(game) +
+                '</div>' + 
+              '</div>' +
             '</div>' +
             buildTickerHtml(game) +
           '</div>';
@@ -571,7 +627,11 @@ Project Context: WDE Scoreboard SAP - V6.5
           else if (singleRanked) highlightClass = 'game-card-single-ranked';
           
           return '<div class="game-card ' + highlightClass + '">' + 
-                 '<div class="p-3 flex-grow-1">' + buildGameHeaderHtml(game, bothRanked) + buildScoreRowHtml(game) + '</div>' + 
+                 '<div class="p-3 flex-grow-1 card-clickable" data-target-id="stats-' + game.id + '">' + 
+                   buildGameHeaderHtml(game, bothRanked) + 
+                   (game.state === 'pre' ? buildPreGameRowHtml(game) : buildLivePostGameRowHtml(game)) +
+                   buildStatCollapseHtml(game) +
+                 '</div>' + 
                  buildTickerHtml(game) + 
                  '</div>';
         }).join('') : '<div class="text-center py-4 text-muted">No games scheduled.</div>';
@@ -588,13 +648,25 @@ Project Context: WDE Scoreboard SAP - V6.5
         return '<div class="d-flex justify-content-between align-items-center mb-3"><div class="d-flex align-items-center gap-2"><span class="status-badge ' + badgeClass + '">' + timeLabel + '</span>' + (game.tvStation ? '<span class="badge ' + tvBadgeClass + '" style="font-size: 0.65rem;">' + game.tvStation + '</span>' : '') + '</div>' + (doubleRanked && !isAuburnGame ? '<span class="badge bg-warning text-dark fw-bold" style="font-size: 0.65rem;">TOP 25 CLASH</span>' : '') + '</div>';
       }
 
-      function buildScoreRowHtml(game) {
-        return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, game.state === 'pre') + buildTeamRowHtml(game.homeTeam, game.state === 'pre') + '</div>';
+      function buildPreGameRowHtml(game) {
+        var teamCol = '<div class="d-flex flex-column gap-3" style="flex: 1;">' + buildTeamRowHtml(game.awayTeam, true) + buildTeamRowHtml(game.homeTeam, true) + '</div>';
+        var oddsCol = '<div class="d-flex flex-column justify-content-center text-end ps-3" style="border-left: 1px solid rgba(255,255,255,0.1); min-width: 65px;">' +
+                      '<div style="font-size: 0.6rem; color: #adb5bd; font-weight: bold; letter-spacing: 0.5px;">SPREAD</div>' +
+                      '<div style="font-size: 0.85rem; font-weight: 900; color: #ffffff;">' + game.oddsDetails + '</div>' +
+                      '<div style="font-size: 0.6rem; color: #adb5bd; font-weight: bold; letter-spacing: 0.5px; margin-top: 4px;">O/U</div>' +
+                      '<div style="font-size: 0.85rem; font-weight: 900; color: #ffffff;">' + game.oddsOU + '</div>' +
+                      '</div>';
+        return '<div class="d-flex justify-content-between">' + teamCol + oddsCol + '</div>';
+      }
+
+      function buildLivePostGameRowHtml(game) {
+        return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, false) + buildTeamRowHtml(game.homeTeam, false) + '</div>';
       }
 
       function buildTeamRowHtml(team, isScheduled) {
         var logoHtml = team.logo ? '<img src="' + team.logo + '" class="team-logo logo-clickable" data-team-id="' + team.id + '" data-team-name="' + team.name + '" data-team-color="' + team.color + '">' : '';
-        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name text-white">' + (team.rank ? '<span class="rank-badge">#' + team.rank + '</span>' : '') + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
+        var scoreHtml = isScheduled ? '' : '<div class="team-score text-white">' + team.score + '</div>';
+        return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name text-white">' + (team.rank ? '<span class="rank-badge">#' + team.rank + '</span>' : '') + team.name + '</div><div class="team-record">' + team.record + '</div></div></div>' + scoreHtml + '</div>';
       }
 
       function buildTickerHtml(game) {
@@ -652,6 +724,140 @@ Project Context: WDE Scoreboard SAP - V6.5
         return null;
       }
 
+      function buildStatCollapseHtml(game) {
+        if (game.state === 'pre') return ''; 
+        var isOpen = state.openAccordions.includes(game.id);
+        var showClass = isOpen ? 'show' : '';
+        return '<div class="collapse mt-3 pt-3 border-top ' + showClass + '" id="stats-' + game.id + '" style="border-color: rgba(255,255,255,0.1) !important;">' +
+               '<div id="summary-content-' + game.id + '">' +
+               (isOpen ? '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-warning"></div></div>' : '') +
+               '</div>' +
+               '</div>';
+      }
+
+      function fetchGameSummary(gameId) {
+        var container = document.getElementById('summary-content-' + gameId);
+        if (container && container.innerHTML.trim() === '') {
+          container.innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-warning"></div></div>';
+        }
+
+        fetch(state.summaryBaseUrl + gameId)
+          .then(res => res.json())
+          .then(data => {
+            var contentDiv = document.getElementById('summary-content-' + gameId);
+            if (!contentDiv) return;
+
+            var boxscorePlayers = (data.boxscore && data.boxscore.players) ? data.boxscore.players : [];
+            var boxscoreTeams = (data.boxscore && data.boxscore.teams) ? data.boxscore.teams : [];
+            
+            if (boxscorePlayers.length < 2) {
+              contentDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Detailed stats not yet available.</div>';
+              return;
+            }
+
+            var team1Players = boxscorePlayers[0];
+            var team2Players = boxscorePlayers[1];
+            
+            var team1StatsArray = (boxscoreTeams.length > 0 && boxscoreTeams[0].statistics) ? boxscoreTeams[0].statistics : [];
+            var team2StatsArray = (boxscoreTeams.length > 1 && boxscoreTeams[1].statistics) ? boxscoreTeams[1].statistics : [];
+
+            var html = '<div class="row text-start g-2">' +
+                       '<div class="col-6">' +
+                       '<div class="fw-bold mb-2 text-uppercase" style="font-size: 0.7rem; color: #adb5bd;">' + (team1Players.team.displayName || team1Players.team.name || 'AWAY') + '</div>' +
+                       buildTeamBoxscoreHtml(team1Players) +
+                       buildTeamStatsHtml(team1StatsArray) +
+                       '</div>' +
+                       '<div class="col-6 border-start" style="border-color: rgba(255,255,255,0.1) !important;">' +
+                       '<div class="fw-bold mb-2 text-uppercase" style="font-size: 0.7rem; color: #adb5bd;">' + (team2Players.team.displayName || team2Players.team.name || 'HOME') + '</div>' +
+                       buildTeamBoxscoreHtml(team2Players) +
+                       buildTeamStatsHtml(team2StatsArray) +
+                       '</div>' +
+                       '</div>';
+            contentDiv.innerHTML = html;
+          })
+          .catch(err => {
+            var errDiv = document.getElementById('summary-content-' + gameId);
+            if(errDiv) errDiv.innerHTML = '<div class="text-center py-2 text-muted" style="font-size:0.7rem;">Failed to load stats.</div>';
+          });
+      }
+
+      function buildTeamBoxscoreHtml(teamBoxscore) {
+        var pass = extractCategoryFromBoxscore(teamBoxscore, 'passing', 3);
+        var rush = extractCategoryFromBoxscore(teamBoxscore, 'rushing', 3);
+        var rec = extractCategoryFromBoxscore(teamBoxscore, 'receiving', 3);
+        var def = extractCategoryFromBoxscore(teamBoxscore, 'defensive', 2);
+
+        if (!pass && !rush && !rec && !def) return '<div style="font-size: 0.65rem; color: #adb5bd;">No data available.</div>';
+
+        var html = '<div class="d-flex flex-column">';
+        if (pass) html += '<div class="stat-line"><span class="fw-bold text-white">PASS:</span><br>' + pass + '</div>';
+        if (rush) html += '<div class="stat-line"><span class="fw-bold text-white">RUSH:</span><br>' + rush + '</div>';
+        if (rec) html += '<div class="stat-line"><span class="fw-bold text-white">REC:</span><br>' + rec + '</div>';
+        if (def) html += '<div class="stat-line"><span class="fw-bold text-white">DEF:</span><br>' + def + '</div>';
+        html += '</div>';
+        return html;
+      }
+
+      function extractCategoryFromBoxscore(boxscoreTeam, categoryName, limit) {
+        if (limit === undefined) limit = 3;
+        if (!boxscoreTeam || !boxscoreTeam.statistics) return null;
+        var category = boxscoreTeam.statistics.find(function(cat) { 
+          return cat.name && cat.name.toLowerCase() === categoryName.toLowerCase(); 
+        });
+        if (category && category.athletes && category.athletes.length > 0) {
+          var players = [];
+          var loopLimit = Math.min(category.athletes.length, limit);
+          for (var i = 0; i < loopLimit; i++) {
+            var athleteData = category.athletes[i];
+            var athleteName = athleteData.athlete.shortName || athleteData.athlete.lastName || 'Unknown';
+            var stats = athleteData.stats || [];
+            
+            var statString = "";
+            if (categoryName === 'passing' && stats.length >= 4) {
+              statString = stats[0] + ', ' + stats[1] + ' YDS, ' + stats[3] + ' TD';
+            } else if (categoryName === 'rushing' && stats.length >= 4) {
+              statString = stats[0] + ' CAR, ' + stats[1] + ' YDS, ' + stats[3] + ' TD';
+            } else if (categoryName === 'receiving' && stats.length >= 4) {
+              statString = stats[0] + ' REC, ' + stats[1] + ' YDS, ' + stats[3] + ' TD';
+            } else if (categoryName === 'defensive' && stats.length >= 4) {
+              statString = stats[0] + ' TKL';
+              if (stats[3] && stats[3] !== '0' && stats[3] !== '0.0') statString += ', ' + stats[3] + ' SCK';
+            } else {
+              statString = stats.join(', '); 
+            }
+            if (statString.includes(', 0 TD')) statString = statString.replace(', 0 TD', '');
+            if (i === 0) players.push('<strong>' + athleteName + '</strong> <span style="opacity: 0.85;">(' + statString + ')</span>');
+            else players.push('<span class="stat-secondary">' + athleteName + ' (' + statString + ')</span>');
+          }
+          return players.join('<br>');
+        }
+        return null;
+      }
+      
+      function getTeamStatValue(statsArray, possibleNames) {
+        var stat = null;
+        for (var i = 0; i < possibleNames.length; i++) {
+          stat = statsArray.find(function(s) { return s.name === possibleNames[i]; });
+          if (stat) return stat.displayValue;
+        }
+        return '-';
+      }
+
+      function buildTeamStatsHtml(statsArray) {
+        if (!statsArray || statsArray.length === 0) return '';
+        var yds = getTeamStatValue(statsArray, ['totalYards', 'netYards', 'totalOffensiveYards']);
+        var to = getTeamStatValue(statsArray, ['turnovers']);
+        var pen = getTeamStatValue(statsArray, ['totalPenaltiesYards', 'penalties', 'penaltiesYards']); 
+        var top = getTeamStatValue(statsArray, ['possessionTime']);
+        return '<div class="mt-2 pt-2 border-top" style="border-color: rgba(255,255,255,0.1) !important;">' +
+               '<div class="fw-bold mb-2" style="font-size: 0.65rem; color: #E87722; letter-spacing: 0.5px;">TEAM STATS</div>' +
+               '<div class="stat-line mb-1"><span class="fw-bold text-white">YDS:</span> ' + yds + '</div>' +
+               '<div class="stat-line mb-1"><span class="fw-bold text-white">TO:</span> ' + to + '</div>' +
+               '<div class="stat-line mb-1"><span class="fw-bold text-white">PEN:</span> ' + pen + '</div>' +
+               '<div class="stat-line mb-1"><span class="fw-bold text-white">TOP:</span> ' + top + '</div>' +
+               '</div>';
+      }
+
       function openTeamHubDrawer(teamId, teamName, teamColor) {
         state.currentHubTeamId = teamId;
         var header = document.getElementById('hubDrawerHeader');
@@ -664,7 +870,6 @@ Project Context: WDE Scoreboard SAP - V6.5
         
         document.getElementById('pane-schedule').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
         
-        // Dynamically inject the web links for Injuries and Depth Chart
         var injuriesUrl = 'https://www.espn.com/college-football/team/injuries/_/id/' + teamId;
         document.getElementById('pane-injuries').innerHTML = 
           '<div class="text-center py-5 px-3">' +
