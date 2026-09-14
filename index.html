@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.3 (Depth Chart Debug Mode)
+Project Context: WDE Scoreboard SAP - V6.4
 </script>
 
 <!DOCTYPE html>
@@ -168,9 +168,8 @@ Project Context: WDE Scoreboard SAP - V6.3 (Depth Chart Debug Mode)
         <div class="tab-pane fade" id="pane-injuries" role="tabpanel">
           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
         </div>
-        <!-- Depth pane adjusted for debugging -->
         <div class="tab-pane fade" id="pane-depth" role="tabpanel">
-          <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
+          <!-- Dynamically populated with ESPN out-link in openTeamHubDrawer -->
         </div>
       </div>
     </div>
@@ -253,7 +252,7 @@ Project Context: WDE Scoreboard SAP - V6.3 (Depth Chart Debug Mode)
 
     <!-- Version Footer & Attribution -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.3 Debug
+      WDE Scoreboard App &bull; V6.4
       <div class="mt-2 fw-bold" style="font-size: 0.55rem; opacity: 0.6; letter-spacing: 1px;">Data provided by ESPN API</div>
     </div>
   </main>
@@ -378,7 +377,6 @@ Project Context: WDE Scoreboard SAP - V6.3 (Depth Chart Debug Mode)
           tab.addEventListener('shown.bs.tab', function (event) {
             var target = event.target.getAttribute('data-bs-target');
             if (target === '#pane-injuries') fetchTeamInjuries(state.currentHubTeamId);
-            if (target === '#pane-depth') fetchTeamDepthChart(state.currentHubTeamId);
           });
         });
       }
@@ -674,7 +672,15 @@ Project Context: WDE Scoreboard SAP - V6.3 (Depth Chart Debug Mode)
         
         document.getElementById('pane-schedule').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
         document.getElementById('pane-injuries').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
-        document.getElementById('pane-depth').innerHTML = '<div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>';
+        
+        // Dynamically inject the web link for the Depth Chart
+        var depthUrl = 'https://www.espn.com/college-football/team/depth/_/id/' + teamId;
+        document.getElementById('pane-depth').innerHTML = 
+          '<div class="text-center py-5 px-3">' +
+            '<i class="bi bi-diagram-3-fill mb-3" style="font-size: 2.5rem; color: #0C2340; opacity: 0.2;"></i>' +
+            '<div class="fw-bold mb-3" style="color: #0C2340;">Depth chart data is only available directly on ESPN.</div>' +
+            '<a href="' + depthUrl + '" target="_blank" rel="noopener noreferrer" class="btn fw-bold text-white w-100" style="background-color: #E87722; letter-spacing: 1px;">VIEW OFFICIAL DEPTH CHART</a>' +
+          '</div>';
 
         var drawerEl = document.getElementById('hubDrawer');
         var bsOffcanvas = bootstrap.Offcanvas.getInstance(drawerEl);
@@ -797,22 +803,6 @@ Project Context: WDE Scoreboard SAP - V6.3 (Depth Chart Debug Mode)
             html += '</ul>';
             body.innerHTML = html;
           }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load injuries.</div>'; });
-      }
-
-      // --- DEBUG OVERRIDE FOR DEPTH CHART ---
-      function fetchTeamDepthChart(teamId) {
-        var body = document.getElementById('pane-depth');
-        if (body.innerHTML.includes('spinner-border') === false) return; 
-
-        fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/' + teamId + '/depthcharts')
-          .then(res => res.json())
-          .then(data => {
-            var rawJson = JSON.stringify(data, null, 2);
-            body.innerHTML = '<div class="p-3"><h6 class="text-warning mb-3" style="color: #E87722 !important;">Debug: Raw JSON Payload</h6><pre style="font-size: 0.65rem; color: #adb5bd; background: #0C2340; padding: 10px; border-radius: 5px; overflow-x: auto;">' + rawJson + '</pre></div>';
-          }).catch(err => { 
-            body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load depth chart.</div>'; 
-            console.error(err);
-          });
       }
 
       function formatKickoffTime(dateString) {
