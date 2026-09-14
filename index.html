@@ -1,7 +1,7 @@
 <script type="text/plain">
 Filename: index.html
 Purpose: Unified Single Page Application (HTML/CSS/JS), PWA manifest, and direct ESPN API client for GitHub Pages deployment.
-Project Context: WDE Scoreboard SAP - V6.2
+Project Context: WDE Scoreboard SAP - V6.3 (Depth Chart Debug Mode)
 </script>
 
 <!DOCTYPE html>
@@ -168,6 +168,7 @@ Project Context: WDE Scoreboard SAP - V6.2
         <div class="tab-pane fade" id="pane-injuries" role="tabpanel">
           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
         </div>
+        <!-- Depth pane adjusted for debugging -->
         <div class="tab-pane fade" id="pane-depth" role="tabpanel">
           <div class="text-center py-5"><div class="spinner-border spinner-border-sm" style="color: #0C2340;"></div></div>
         </div>
@@ -218,21 +219,11 @@ Project Context: WDE Scoreboard SAP - V6.2
         <label class="form-label fw-bold text-uppercase mb-2" style="color: #adb5bd; font-size: 0.75rem; letter-spacing: 0.08em;">Schedule Week</label>
         <select id="weekSelector" class="form-select bg-dark text-white border-secondary">
           <option value="current" selected>Current Week</option>
-          <option value="1">Week 1</option>
-          <option value="2">Week 2</option>
-          <option value="3">Week 3</option>
-          <option value="4">Week 4</option>
-          <option value="5">Week 5</option>
-          <option value="6">Week 6</option>
-          <option value="7">Week 7</option>
-          <option value="8">Week 8</option>
-          <option value="9">Week 9</option>
-          <option value="10">Week 10</option>
-          <option value="11">Week 11</option>
-          <option value="12">Week 12</option>
-          <option value="13">Week 13</option>
-          <option value="14">Week 14</option>
-          <option value="15">Conference Champ</option>
+          <option value="1">Week 1</option><option value="2">Week 2</option><option value="3">Week 3</option>
+          <option value="4">Week 4</option><option value="5">Week 5</option><option value="6">Week 6</option>
+          <option value="7">Week 7</option><option value="8">Week 8</option><option value="9">Week 9</option>
+          <option value="10">Week 10</option><option value="11">Week 11</option><option value="12">Week 12</option>
+          <option value="13">Week 13</option><option value="14">Week 14</option><option value="15">Conference Champ</option>
         </select>
       </div>
 
@@ -262,7 +253,7 @@ Project Context: WDE Scoreboard SAP - V6.2
 
     <!-- Version Footer & Attribution -->
     <div class="text-center mt-4" style="color: #adb5bd; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; padding-bottom: 80px;">
-      WDE Scoreboard App &bull; V6.2
+      WDE Scoreboard App &bull; V6.3 Debug
       <div class="mt-2 fw-bold" style="font-size: 0.55rem; opacity: 0.6; letter-spacing: 1px;">Data provided by ESPN API</div>
     </div>
   </main>
@@ -370,7 +361,6 @@ Project Context: WDE Scoreboard SAP - V6.2
           });
         }
 
-        // Team Hub Drawer Event Listeners[cite: 1]
         document.addEventListener('click', function(e) {
           var logoTarget = e.target.closest('.logo-clickable');
           if (logoTarget) {
@@ -505,7 +495,7 @@ Project Context: WDE Scoreboard SAP - V6.2
           tvStation: tv,
           homeTeam: extractTeamDetails(home),
           awayTeam: extractTeamDetails(away),
-          gameLeaders: comp.leaders || [] // Added for Ticker[cite: 1]
+          gameLeaders: comp.leaders || []
         };
       }
 
@@ -519,8 +509,8 @@ Project Context: WDE Scoreboard SAP - V6.2
           score: competitor.score || '0',
           rank: rank,
           record: (competitor.records && competitor.records[0]) ? competitor.records[0].summary : '',
-          color: team.color || '0C2340', // Added for Hub Header[cite: 1]
-          seasonLeaders: competitor.leaders || [] // Added for Pre-Game Ticker[cite: 1]
+          color: team.color || '0C2340',
+          seasonLeaders: competitor.leaders || []
         };
       }
 
@@ -612,13 +602,11 @@ Project Context: WDE Scoreboard SAP - V6.2
         return '<div class="d-flex flex-column gap-3">' + buildTeamRowHtml(game.awayTeam, game.state === 'pre') + buildTeamRowHtml(game.homeTeam, game.state === 'pre') + '</div>';
       }
 
-      // Add logo-clickable class and data tags[cite: 1]
       function buildTeamRowHtml(team, isScheduled) {
         var logoHtml = team.logo ? '<img src="' + team.logo + '" class="team-logo logo-clickable" data-team-id="' + team.id + '" data-team-name="' + team.name + '" data-team-color="' + team.color + '">' : '';
         return '<div class="d-flex justify-content-between align-items-center"><div class="d-flex align-items-center gap-3">' + logoHtml + '<div><div class="team-name text-white">' + (team.rank ? '<span class="rank-badge">#' + team.rank + '</span>' : '') + team.name + '</div><div class="team-record">' + team.record + '</div></div></div><div class="team-score text-white">' + (isScheduled ? '-' : team.score) + '</div></div>';
       }
 
-      // Ticker HTML Builder[cite: 1]
       function buildTickerHtml(game) {
         var fullText = '';
         if (game.state === 'pre') {
@@ -674,7 +662,6 @@ Project Context: WDE Scoreboard SAP - V6.2
         return null;
       }
 
-      // Hub Drawer Logic[cite: 1]
       function openTeamHubDrawer(teamId, teamName, teamColor) {
         state.currentHubTeamId = teamId;
         var header = document.getElementById('hubDrawerHeader');
@@ -812,6 +799,7 @@ Project Context: WDE Scoreboard SAP - V6.2
           }).catch(err => { body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load injuries.</div>'; });
       }
 
+      // --- DEBUG OVERRIDE FOR DEPTH CHART ---
       function fetchTeamDepthChart(teamId) {
         var body = document.getElementById('pane-depth');
         if (body.innerHTML.includes('spinner-border') === false) return; 
@@ -819,52 +807,8 @@ Project Context: WDE Scoreboard SAP - V6.2
         fetch('https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams/' + teamId + '/depthcharts')
           .then(res => res.json())
           .then(data => {
-            var items = data.depthchart || (Array.isArray(data) ? data : (data.items || []));
-            
-            if (!items.length) { 
-              body.innerHTML = '<div class="text-center py-4 text-muted">Depth chart not available.</div>'; 
-              return; 
-            }
-            
-            var html = '<div class="p-3">';
-            items.forEach(function(unit) {
-              if (unit.name === 'Special Teams') return; 
-              html += '<div class="fw-bold mb-2 text-uppercase" style="color: #C8102E; font-size: 0.75rem; border-bottom: 1px solid rgba(12,35,64,0.1); padding-bottom: 4px;">' + unit.name + '</div>';
-              
-              if (unit.positions) {
-                var positionsArray = Array.isArray(unit.positions) ? unit.positions : Object.keys(unit.positions).map(function(key) { return unit.positions[key]; });
-                
-                positionsArray.forEach(function(pos) {
-                  var posName = pos.position && pos.position.abbreviation ? pos.position.abbreviation : 'POS';
-                  
-                  var playersHtml = '';
-                  if (pos.athletes && pos.athletes.length > 0) {
-                    var starterData = pos.athletes[0].athlete || pos.athletes[0];
-                    var starter = starterData.displayName || starterData.shortName || 'TBD';
-                    playersHtml = '<strong>' + starter + '</strong>';
-                    
-                    var backups = [];
-                    for (var i = 1; i < pos.athletes.length; i++) {
-                      var backupData = pos.athletes[i].athlete || pos.athletes[i];
-                      backups.push(backupData.displayName || backupData.shortName);
-                    }
-                    if (backups.length > 0) {
-                      playersHtml += ' <span style="opacity: 0.6; font-size: 0.7rem; margin-left: 6px;">' + backups.join(', ') + '</span>';
-                    }
-                  } else {
-                    playersHtml = 'TBD';
-                  }
-                  
-                  html += '<div class="d-flex align-items-center mb-2">' +
-                          '<div class="fw-bold text-center" style="width: 35px; font-size: 0.75rem; color: #0C2340; background-color: rgba(12,35,64,0.05); padding: 2px; border-radius: 4px; margin-right: 10px;">' + posName + '</div>' +
-                          '<div style="font-size: 0.8rem; color: #0C2340; line-height: 1.2;">' + playersHtml + '</div>' +
-                          '</div>';
-                });
-              }
-              html += '<div class="mb-3"></div>';
-            });
-            html += '</div>';
-            body.innerHTML = html;
+            var rawJson = JSON.stringify(data, null, 2);
+            body.innerHTML = '<div class="p-3"><h6 class="text-warning mb-3" style="color: #E87722 !important;">Debug: Raw JSON Payload</h6><pre style="font-size: 0.65rem; color: #adb5bd; background: #0C2340; padding: 10px; border-radius: 5px; overflow-x: auto;">' + rawJson + '</pre></div>';
           }).catch(err => { 
             body.innerHTML = '<div class="text-center py-4 text-danger">Failed to load depth chart.</div>'; 
             console.error(err);
